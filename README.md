@@ -22,6 +22,11 @@ install, no build step, and it keeps working when the internet drops.
 
 ---
 
+> **Already set up.** This portal ships connected to its Supabase
+> project, so any device that opens the link goes straight to the
+> sign-in screen. The steps below are the record of how it was set up,
+> and what to repeat if you ever move to a new Supabase project.
+
 ## Setting it up — five steps, about fifteen minutes
 
 You only do this once.

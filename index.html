@@ -1031,10 +1031,14 @@ const BUSINESS = {
   locale:'en-ZA',
   currency:{ symbol:'R', code:'ZAR' },
 
-  /* Left blank on purpose. The owner pastes the project URL and the
-     publishable key into the Database page's setup wizard. A publishable
-     key is safe in public source; a secret key never belongs here. */
-  supabase:{ url:'', key:'' },
+  /* Baked in so every device connects with no setup. A publishable key
+     is designed to sit in public source - the owner allowlist and RLS
+     are what protect the data, not hiding this. A secret or
+     service_role key must never appear here. */
+  supabase:{
+    url:'https://znuozxezktzoeozffddk.supabase.co',
+    key:'sb_publishable_pTsbhKPwEQjoifiOvS0Lvw_XKkHdMDr'
+  },
 
   brand:{
     accent:'#b3121f',        /* --color-red */
@@ -1522,13 +1526,15 @@ const Cloud = {
   /* ---- low level request ---------------------------------------- */
   async raw(path,opts){
     opts = opts||{};
+    /* Must come first: cfg can be null, and reading a key off it would
+       throw a TypeError that surfaces instead of this explanation. */
+    if(!this.on){
+      throw new Error('This portal is not connected to a Supabase project yet. Enter your project URL and publishable key to connect.');
+    }
     const headers = Object.assign({
       apikey:this.cfg.key,
       Authorization:'Bearer '+((this.session&&this.session.access_token)||this.cfg.key)
     },opts.headers||{});
-    if(!this.on){
-      throw new Error('This portal is not connected to a Supabase project yet. Enter your project URL and publishable key to connect.');
-    }
     let res;
     try{
       res = await fetch(this.cfg.url+path,Object.assign({},opts,{headers}));
@@ -4062,12 +4068,11 @@ Portal.register({
       enquiries:Store.list('enquiries').filter(e=>e.demo).length
     };
     const sampleTotal = samples.builds+samples.testimonials+samples.offers+samples.enquiries;
-    const real = {
-      builds:Store.list('builds').filter(v=>!v.demo).length,
-      testimonials:Store.list('testimonials').filter(t=>!t.demo).length,
-      offers:Store.list('offers').filter(o=>!o.demo).length,
-      enquiries:Store.list('enquiries').filter(e=>!e.demo).length
-    };
+    /* Every synced collection, so a new one can never be silently
+       missing from this summary again. */
+    const real = {};
+    ['builds','services','stages','products','brands','faqs','testimonials','offers','enquiries']
+      .forEach(k=>{ real[k] = Store.list(k).filter(r=>!r.demo).length; });
 
     return `
     ${H.head('Database','Your content lives in Supabase, shared across every device you sign in from and readable by your website.',
@@ -4123,8 +4128,13 @@ Portal.register({
         ${on?H.card('3. Move your content across','Only your own records are sent, never the samples',`
           <div class="grid" style="gap:12px">
             <div class="kv">
-              <div class="kv-row"><span>Your vehicles</span><b>${real.vehicles}</b></div>
-              <div class="kv-row"><span>Your testimonials</span><b>${real.testimonials}</b></div>
+              <div class="kv-row"><span>Your builds</span><b>${real.builds}</b></div>
+              <div class="kv-row"><span>Your services</span><b>${real.services}</b></div>
+              <div class="kv-row"><span>Your stages</span><b>${real.stages}</b></div>
+              <div class="kv-row"><span>Your products</span><b>${real.products}</b></div>
+              <div class="kv-row"><span>Your brands</span><b>${real.brands}</b></div>
+              <div class="kv-row"><span>Your FAQs</span><b>${real.faqs}</b></div>
+              <div class="kv-row"><span>Your reviews</span><b>${real.testimonials}</b></div>
               <div class="kv-row"><span>Your offers</span><b>${real.offers}</b></div>
               <div class="kv-row"><span>Your enquiries</span><b>${real.enquiries}</b></div>
             </div>
