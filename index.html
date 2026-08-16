@@ -459,6 +459,7 @@ img{max-width:100%;display:block}
   animation:fadeUp .5s var(--ease-out) both;
 }
 .veh:hover{transform:translateY(-5px);box-shadow:var(--sh-4);border-color:rgba(224,30,46,.32)}
+/* Applied to archived builds. */
 .veh.sold{opacity:.72}
 .veh-img{position:relative;aspect-ratio:16/10;background:linear-gradient(145deg,#1A1F29,#0E1117);overflow:hidden}
 .veh-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease)}
@@ -479,14 +480,6 @@ img{max-width:100%;display:block}
   box-shadow:0 4px 14px -4px var(--accent-glow);backdrop-filter:blur(6px);
 }
 .veh-stage b{font-family:var(--font-head);font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#fff}
-.sold-stamp{
-  position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,8,11,.5);-webkit-backdrop-filter:blur(1px);;backdrop-filter:blur(1px);
-}
-.sold-stamp b{
-  transform:rotate(-11deg);padding:6px 20px;border:2.5px solid var(--danger);border-radius:8px;
-  color:#F5949B;font-weight:800;font-size:19px;letter-spacing:.16em;background:rgba(0,0,0,.4);
-  text-shadow:0 2px 10px rgba(0,0,0,.6);
-}
 .veh-b{padding:14px}
 .veh-name{font-size:14.5px;font-weight:650;letter-spacing:-.02em;line-height:1.3}
 .veh-meta{font-size:11.5px;color:var(--text-3);margin-top:2px}
@@ -908,27 +901,27 @@ table.tbl .mut{color:var(--text-3);font-size:12px}
          able to connect from here or there is no way in at all. -->
     <form class="login-form" id="setupForm" autocomplete="off">
       <div class="field">
-        <label>Supabase project URL</label>
+        <label for="setupUrl">Supabase project URL</label>
         <input class="inp" type="url" id="setupUrl" placeholder="https://yourproject.supabase.co" autocomplete="off" spellcheck="false">
       </div>
       <div class="field">
-        <label>Publishable key</label>
+        <label for="setupKey">Publishable key</label>
         <input class="inp" type="text" id="setupKey" placeholder="sb_publishable_..." autocomplete="off" spellcheck="false">
       </div>
-      <div class="login-err" id="setupErr"></div>
+      <div class="login-err" id="setupErr" role="alert" aria-live="polite"></div>
       <button class="btn btn-pri btn-lg btn-block" type="submit" id="setupBtn">Connect project</button>
     </form>
 
     <form class="login-form" id="loginForm" autocomplete="off">
       <div class="field" id="loginEmailField">
-        <label>Email address</label>
+        <label for="loginEmail">Email address</label>
         <input class="inp" type="email" id="loginEmail" autocomplete="username">
       </div>
       <div class="field">
-        <label id="loginPassLabel">Password</label>
+        <label id="loginPassLabel" for="loginPass">Password</label>
         <input class="inp" type="password" id="loginPass" placeholder="Enter your password" autocomplete="current-password">
       </div>
-      <div class="login-err" id="loginErr"></div>
+      <div class="login-err" id="loginErr" role="alert" aria-live="polite"></div>
       <button class="btn btn-pri btn-lg btn-block" type="submit" id="loginBtn">Sign in</button>
       <button class="btn btn-ghost btn-block" type="button" id="loginForgot" style="font-size:12.5px">Forgot your password?</button>
     </form>
@@ -2636,8 +2629,10 @@ const H = {
   ta(key,val,ph,rows){
     return `<textarea class="ta" data-k="${key}" rows="${rows||4}" placeholder="${U.esc(ph||'')}">${U.esc(val)}</textarea>`;
   },
-  sel(key,val,opts){
-    return `<select class="sel" data-k="${key}">${opts.map(o=>{
+  /* `label` is optional and only needed where the select is not already
+     wrapped by H.field's <label>, e.g. inline rows in Appearance. */
+  sel(key,val,opts,label){
+    return `<select class="sel" data-k="${key}"${label?` aria-label="${U.esc(label)}"`:''}>${opts.map(o=>{
       const v = typeof o==='object'?o.v:o, l = typeof o==='object'?o.l:o;
       return `<option value="${U.esc(v)}" ${String(v)===String(val)?'selected':''}>${U.esc(l)}</option>`;
     }).join('')}</select>`;
@@ -2833,11 +2828,11 @@ Portal.register({
       <label class="search">${ICON.search}
         <input id="bq" placeholder="Search by title, make, model, stage or engine" value="${U.esc(s.q)}">
       </label>
-      <select class="sel" id="bmake">
+      <select class="sel" id="bmake" aria-label="Filter builds by vehicle make">
         <option value="">All makes</option>
         ${makes.map(m=>`<option value="${U.esc(m)}" ${m===s.make?'selected':''}>${U.esc(m)}</option>`).join('')}
       </select>
-      <select class="sel" id="bsort">
+      <select class="sel" id="bsort" aria-label="Sort builds">
         ${[['newest','Newest first'],['oldest','Oldest first'],['gain-hi','Biggest power gain'],['power-hi','Highest final power'],['stage','Stage order'],['views','Most viewed'],['name','Title A to Z']]
           .map(o=>`<option value="${o[0]}" ${s.sort===o[0]?'selected':''}>${o[1]}</option>`).join('')}
       </select>
@@ -2902,8 +2897,8 @@ Portal.register({
         </div>
         ${x.featured?`<span class="chip acc"><i></i>Featured</span>`:''}
         ${x.active?'':`<span class="chip warn"><i></i>Hidden</span>`}
-        <button class="btn btn-sm" data-sact="edit" data-id="${x.id}">${ICON.edit}</button>
-        <button class="btn btn-sm btn-dan" data-sact="del" data-id="${x.id}">${ICON.trash}</button>
+        <button class="btn btn-sm" data-sact="edit" data-id="${x.id}" aria-label="Edit ${U.esc(x.title)}" title="Edit">${ICON.edit}</button>
+        <button class="btn btn-sm btn-dan" data-sact="del" data-id="${x.id}" aria-label="Delete ${U.esc(x.title)}" title="Delete">${ICON.trash}</button>
       </div>`).join('')}</div></div></div>`
     : H.empty('wrench','No services in this division yet','Add the services you offer and they will appear on your website.',
         `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add service</button>`)}`;
@@ -2967,7 +2962,7 @@ Portal.register({
         <div class="veh-acts">
           <button class="btn btn-sm" data-stact="edit" data-id="${x.id}">${ICON.edit} Edit</button>
           <button class="btn btn-sm ${x.active?'btn-warn':'btn-ok'}" data-stact="toggle" data-id="${x.id}">${x.active?ICON.x+' Hide':ICON.check+' Show'}</button>
-          <button class="btn btn-sm btn-dan" data-stact="del" data-id="${x.id}">${ICON.trash}</button>
+          <button class="btn btn-sm btn-dan" data-stact="del" data-id="${x.id}" aria-label="Delete ${U.esc(x.name)}" title="Delete">${ICON.trash}</button>
         </div>
       </div>`).join('')}</div>`
     : H.empty('stage','No stages yet','Add your performance stages and they will appear on your homepage.',
@@ -3032,7 +3027,7 @@ Portal.register({
             <div class="veh-acts">
               <button class="btn btn-sm" data-pact="edit" data-id="${p.id}">${ICON.edit} Edit</button>
               <button class="btn btn-sm ${p.active?'btn-warn':'btn-ok'}" data-pact="toggle" data-id="${p.id}">${p.active?ICON.x+' Hide':ICON.check+' Show'}</button>
-              <button class="btn btn-sm btn-dan" data-pact="del" data-id="${p.id}">${ICON.trash}</button>
+              <button class="btn btn-sm btn-dan" data-pact="del" data-id="${p.id}" aria-label="Delete ${U.esc(p.name)}" title="Delete">${ICON.trash}</button>
             </div>
           </div>`).join('')}</div>`
         : H.empty('additive','No products yet','Add the products you stock and they will appear on your Performance page.',
@@ -3043,8 +3038,8 @@ Portal.register({
             ${x.logo?`<img src="${x.logo}" alt="">`:`<div class="li-ic">${ICON.shield}</div>`}
             <div style="min-width:0;flex:1"><b style="font-size:13.5px">${U.esc(x.name)}</b></div>
             ${x.active?'':`<span class="chip warn"><i></i>Hidden</span>`}
-            <button class="btn btn-sm" data-bract="edit" data-id="${x.id}">${ICON.edit}</button>
-            <button class="btn btn-sm btn-dan" data-bract="del" data-id="${x.id}">${ICON.trash}</button>
+            <button class="btn btn-sm" data-bract="edit" data-id="${x.id}" aria-label="Edit ${U.esc(x.name)}" title="Edit">${ICON.edit}</button>
+            <button class="btn btn-sm btn-dan" data-bract="del" data-id="${x.id}" aria-label="Delete ${U.esc(x.name)}" title="Delete">${ICON.trash}</button>
           </div>`).join('')}</div></div></div>`
         : H.empty('shield','No brands yet','Add the performance brands you supply and support.',
             `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add brand</button>`));
@@ -3120,8 +3115,8 @@ Portal.register({
             </div>
             ${f.featured?`<span class="chip acc"><i></i>Homepage</span>`:''}
             ${f.active?'':`<span class="chip warn"><i></i>Hidden</span>`}
-            <button class="btn btn-sm" data-fact="edit" data-id="${f.id}">${ICON.edit}</button>
-            <button class="btn btn-sm btn-dan" data-fact="del" data-id="${f.id}">${ICON.trash}</button>
+            <button class="btn btn-sm" data-fact="edit" data-id="${f.id}" aria-label="Edit this question" title="Edit">${ICON.edit}</button>
+            <button class="btn btn-sm btn-dan" data-fact="del" data-id="${f.id}" aria-label="Delete this question" title="Delete">${ICON.trash}</button>
           </div>`).join('')}</div>`,'','flush')}`).join('')
     : H.empty('question','No questions yet','Add the questions customers ask most and they will appear on your FAQs page.',
         `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add question</button>`)}`;
@@ -3191,10 +3186,10 @@ Portal.register({
               </div>`)}
             ${H.card('Buttons','Where the hero buttons send visitors',`
               <div class="grid g2">
-                ${H.field('Main button text',H.input('btn1Text',h.btn1Text,'Browse our inventory'))}
-                ${H.field('Main button link',H.input('btn1Link',h.btn1Link,'#inventory'))}
-                ${H.field('Second button text',H.input('btn2Text',h.btn2Text,'Chat on WhatsApp'))}
-                ${H.field('Second button link',H.input('btn2Link',h.btn2Link,'https://wa.me/27768615477'))}
+                ${H.field('Main button text',H.input('btn1Text',h.btn1Text,BUSINESS.copy.btn1Text))}
+                ${H.field('Main button link',H.input('btn1Link',h.btn1Link,BUSINESS.copy.btn1Link))}
+                ${H.field('Second button text',H.input('btn2Text',h.btn2Text,BUSINESS.copy.btn2Text))}
+                ${H.field('Second button link',H.input('btn2Link',h.btn2Link,BUSINESS.copy.btn2Link))}
               </div>`)}
           </div>
           <div class="grid" style="gap:14px">
@@ -3220,7 +3215,7 @@ Portal.register({
         ${H.card('Featured section heading','Text above your featured cars',`
           <div class="grid g2">
             ${H.field('Section title',H.input('featuredTitle',h.featuredTitle,'Featured builds'))}
-            ${H.field('Section subtitle',H.input('featuredSub',h.featuredSub,'A selection of our finest stock'))}
+            ${H.field('Section subtitle',H.input('featuredSub',h.featuredSub,'A selection of recent work from the workshop'))}
           </div>`)}
         <div style="height:14px"></div>
         ${H.card('Choose featured builds','Tick the builds that should appear on your homepage. Drag to change their order.',
@@ -3306,8 +3301,8 @@ Portal.register({
             ${H.field('Title',H.input('ctaTitle',h.ctaTitle,BUSINESS.copy.ctaTitle))}
             ${H.field('Supporting text',H.ta('ctaText',h.ctaText,'Send us a message and we will get back to you',2))}
             <div class="grid g2">
-              ${H.field('Button text',H.input('ctaBtnText',h.ctaBtnText,'Speak to our team'))}
-              ${H.field('Button link',H.input('ctaBtnLink',h.ctaBtnLink,'#contact'))}
+              ${H.field('Button text',H.input('ctaBtnText',h.ctaBtnText,BUSINESS.copy.ctaBtnText))}
+              ${H.field('Button link',H.input('ctaBtnLink',h.ctaBtnLink,BUSINESS.copy.ctaBtnLink))}
             </div>
           </div>`)}
         <div style="height:14px"></div>
@@ -3416,7 +3411,7 @@ Portal.register({
         <div class="row" style="margin-top:14px;padding-top:13px;border-top:1px solid var(--line);gap:6px">
           <button class="btn btn-sm" data-tact="edit" data-id="${t.id}">${ICON.edit} Edit</button>
           <button class="btn btn-sm ${t.featured?'btn-warn':''}" data-tact="feature" data-id="${t.id}">${ICON.home} ${t.featured?'Unpin':'Pin'}</button>
-          <button class="btn btn-sm btn-dan" data-tact="del" data-id="${t.id}" style="margin-left:auto">${ICON.trash}</button>
+          <button class="btn btn-sm btn-dan" data-tact="del" data-id="${t.id}" style="margin-left:auto" aria-label="Delete review from ${U.esc(t.name)}" title="Delete review">${ICON.trash}</button>
         </div>
         <div style="font-size:11px;color:var(--text-3);margin-top:9px">Added ${U.date(t.createdAt)}</div>
       </div>`).join('')}</div>`
@@ -3476,8 +3471,8 @@ Portal.register({
         <div class="veh-acts">
           <button class="btn btn-sm" data-oact="edit" data-id="${o.id}">${ICON.edit} Edit</button>
           <button class="btn btn-sm ${o.active?'btn-warn':'btn-ok'}" data-oact="toggle" data-id="${o.id}">${o.active?ICON.x+' Switch off':ICON.check+' Switch on'}</button>
-          <button class="btn btn-sm" data-oact="dup" data-id="${o.id}">${ICON.copy}</button>
-          <button class="btn btn-sm btn-dan" data-oact="del" data-id="${o.id}">${ICON.trash}</button>
+          <button class="btn btn-sm" data-oact="dup" data-id="${o.id}" aria-label="Duplicate ${U.esc(o.title)}" title="Duplicate">${ICON.copy}</button>
+          <button class="btn btn-sm btn-dan" data-oact="del" data-id="${o.id}" aria-label="Delete ${U.esc(o.title)}" title="Delete">${ICON.trash}</button>
         </div>
       </div>`;
     }).join('')}</div>`
@@ -3526,15 +3521,15 @@ Portal.register({
       <div class="grid" style="gap:14px">
         ${H.card('Phone and messaging','How customers reach you',`
           <div class="grid" style="gap:14px">
-            ${H.field('Main phone number',H.input('phone',c.phone,'082 771 8514'))}
+            ${H.field('Main phone number',H.input('phone',c.phone,BUSINESS.contact.phone))}
             ${H.field('Second phone number',H.input('phone2',c.phone2,'Optional'),'','optional')}
-            ${H.field('WhatsApp number',H.input('whatsapp',c.whatsapp,'+27 76 861 5477'),'Include the country code so the WhatsApp button works from any phone.')}
+            ${H.field('WhatsApp number',H.input('whatsapp',c.whatsapp,BUSINESS.contact.whatsapp),'Include the country code so the WhatsApp button works from any phone.')}
             ${H.field('Email address',H.input('email',c.email,BUSINESS.contact.email,'email'))}
           </div>`)}
         ${H.card('Location','Where your dealership is',`
           <div class="grid" style="gap:14px">
             ${H.field('Street address',H.ta('address',c.address,'546 Rachel de Beer St, Pretoria North',2))}
-            ${H.field('Google Maps link',H.input('mapsUrl',c.mapsUrl,'https://maps.google.com/...'),'Paste the share link from Google Maps. This powers the map and the directions button.')}
+            ${H.field('Google Maps link',H.input('mapsUrl',c.mapsUrl,BUSINESS.contact.mapsUrl),'Paste the share link from Google Maps. This powers the map and the directions button.')}
           </div>`)}
         ${H.card('Social media','Leave a field empty to hide that icon',`
           <div class="grid" style="gap:12px">
@@ -3553,9 +3548,9 @@ Portal.register({
                 <b style="font-size:12.5px;width:78px;flex-shrink:0">${h.day}</b>
                 ${h.closed
                   ? `<span class="chip dan" style="flex:1;justify-content:center">Closed</span>`
-                  : `<input class="inp" data-hi="${i}" data-hk="open" type="time" value="${h.open}" style="padding:6px 9px;font-size:12.5px;flex:1;min-width:0">
+                  : `<input class="inp" data-hi="${i}" data-hk="open" type="time" value="${h.open}" aria-label="${U.esc(h.day)} opening time" style="padding:6px 9px;font-size:12.5px;flex:1;min-width:0">
                      <span style="color:var(--text-3);font-size:12px">to</span>
-                     <input class="inp" data-hi="${i}" data-hk="close" type="time" value="${h.close}" style="padding:6px 9px;font-size:12.5px;flex:1;min-width:0">`}
+                     <input class="inp" data-hi="${i}" data-hk="close" type="time" value="${h.close}" aria-label="${U.esc(h.day)} closing time" style="padding:6px 9px;font-size:12.5px;flex:1;min-width:0">`}
                 <label class="switch ok" title="Open on this day"><input type="checkbox" data-hopen="${i}" ${h.closed?'':'checked'}><span class="track"></span></label>
               </div>`).join('')}
           </div>`)}
@@ -3720,27 +3715,27 @@ Portal.register({
               <label>Accent colour</label>
               <div class="swatches">
                 ${accents.map(c=>`<button class="sw ${a.accent.toLowerCase()===c.toLowerCase()?'on':''}" data-acc="${c}" style="background:${c}" title="${c}"></button>`).join('')}
-                <input class="color-in" type="color" data-k="accent" value="${a.accent}" title="Choose any colour">
+                <input class="color-in" type="color" data-k="accent" value="${a.accent}" title="Choose any colour" aria-label="Accent colour">
               </div>
               <span class="hint">Currently ${a.accent.toUpperCase()}. The portal preview updates instantly.</span>
             </div>
             <div class="grid g2">
-              ${H.field('Primary background',`<div class="row" style="gap:8px"><input class="color-in" type="color" data-k="primary" value="${a.primary}">${H.input('primary',a.primary,BUSINESS.brand.primary)}</div>`)}
-              ${H.field('Success colour',`<div class="row" style="gap:8px"><input class="color-in" type="color" data-k="success" value="${a.success}">${H.input('success',a.success,BUSINESS.brand.success)}</div>`)}
+              ${H.field('Primary background',`<div class="row" style="gap:8px"><input class="color-in" type="color" data-k="primary" value="${a.primary}" aria-label="Primary background colour">${H.input('primary',a.primary,BUSINESS.brand.primary)}</div>`)}
+              ${H.field('Success colour',`<div class="row" style="gap:8px"><input class="color-in" type="color" data-k="success" value="${a.success}" aria-label="Success colour">${H.input('success',a.success,BUSINESS.brand.success)}</div>`)}
             </div>
             ${H.toggleCard('darkSite',a.darkSite,'Dark website theme','Use a dark background on the public website','ok','palette')}
           </div>`)}
         ${H.card('Typography','Fonts used on your website',`
           <div class="grid g2">
-            ${H.field('Heading font',H.sel('heading',a.heading,fonts))}
-            ${H.field('Body font',H.sel('bodyFont',a.bodyFont,fonts))}
+            ${H.field('Heading font',H.sel('heading',a.heading,fonts,'Heading font'))}
+            ${H.field('Body font',H.sel('bodyFont',a.bodyFont,fonts,'Body font'))}
           </div>
           <div class="sep"></div>
           ${H.field('Tagline under your logo',H.input('tagline',a.tagline,BUSINESS.brand.tagline))}`)}
         ${H.card('Buttons','How buttons look across the site',`
           <div class="grid" style="gap:14px">
-            ${H.field('Corner style',H.sel('btnStyle',a.btnStyle,[{v:'rounded',l:'Rounded corners'},{v:'pill',l:'Fully rounded pill'},{v:'square',l:'Square corners'}]))}
-            ${H.field('Corner size',`<input class="inp" type="range" min="0" max="28" step="2" data-k="radius" value="${a.radius}" style="padding:6px 0">`,'Currently '+a.radius+'px')}
+            ${H.field('Corner style',H.sel('btnStyle',a.btnStyle,[{v:'rounded',l:'Rounded corners'},{v:'pill',l:'Fully rounded pill'},{v:'square',l:'Square corners'}],'Corner style'))}
+            ${H.field('Corner size',`<input class="inp" type="range" min="0" max="28" step="2" aria-label="Corner roundness in pixels" data-k="radius" value="${a.radius}" style="padding:6px 0">`,'Currently '+a.radius+'px')}
             ${H.toggleCard('btnShadow',a.btnShadow,'Soft button shadow','Adds depth to every button','','bolt')}
           </div>`)}
       </div>
@@ -3799,7 +3794,7 @@ Portal.register({
       <div style="font-family:${a.heading==='System default'?'inherit':a.heading}, var(--font);font-size:19px;font-weight:750;letter-spacing:-.03em">Where Performance Meets Precision</div>
       <p style="font-size:12.5px;color:var(--text-2);margin-top:6px;font-family:${a.bodyFont==='System default'?'inherit':a.bodyFont}, var(--font)">Body text uses the ${U.esc(a.bodyFont)} font. Headings use ${U.esc(a.heading)}.</p>
       <div class="row" style="margin-top:14px">
-        <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};background:${a.accent};color:#fff;font-weight:650;font-size:13px;box-shadow:${sh}">View inventory</span>
+        <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};background:${a.accent};color:#fff;font-weight:650;font-size:13px;box-shadow:${sh}">View our builds</span>
         <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};background:${a.success};color:#fff;font-weight:650;font-size:13px;box-shadow:${a.btnShadow?'0 8px 22px -10px '+a.success+'88':'none'}">WhatsApp us</span>
         <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};border:1px solid var(--line-2);font-weight:650;font-size:13px">Contact</span>
       </div>`;
@@ -3924,7 +3919,7 @@ Portal.register({
           <div class="grid" style="gap:11px">
             <button class="btn btn-pri btn-block btn-lg" data-act="export">${ICON.download} Download full backup</button>
             <button class="btn btn-block btn-lg" data-act="import">${ICON.upload} Restore from a backup file</button>
-            <input type="file" accept="application/json,.json" id="impFile" class="hidden">
+            <input type="file" accept="application/json,.json" id="impFile" aria-label="Choose a backup file to restore" class="hidden">
             <div class="sep" style="margin:6px 0"></div>
             <div class="kv">
               <div class="kv-row"><span>Data stored</span><b>${kb} KB</b></div>
@@ -5313,7 +5308,7 @@ const Modules = {
       title: editing ? 'Edit offer' : 'Create a special offer',
       sub:'Promotional banners appear near the top of your homepage.',
       body:`<div class="grid" style="gap:14px">
-        ${H.field('Offer title',H.input('title',draft.title,'January finance special'))}
+        ${H.field('Offer title',H.input('title',draft.title,'Winter tuning special'))}
         ${H.field('Description',H.ta('description',draft.description,'Zero deposit finance available on selected vehicles.',3))}
         <div class="grid g2">
           ${H.field('Button text',H.input('btnText',draft.btnText,'Apply for finance'))}
@@ -5323,7 +5318,7 @@ const Modules = {
           ${H.field('Expiry date',`<input class="inp" data-k="expiry" type="date" value="${U.dateInput(draft.expiry)}">`,'The banner hides itself after this date.')}
           ${H.field('Banner colour',`<div class="swatches" style="padding-top:4px">
             ${colours.map(c=>`<button class="sw ${draft.colour.toLowerCase()===c.toLowerCase()?'on':''}" data-oc="${c}" style="background:${c}"></button>`).join('')}
-            <input class="color-in" type="color" data-k="colour" value="${draft.colour}">
+            <input class="color-in" type="color" data-k="colour" value="${draft.colour}" aria-label="Offer banner colour">
           </div>`)}
         </div>
         ${H.field('Background image',`<div id="offImg"></div>`,'Optional. A subtle image behind the text.','optional')}
@@ -5436,8 +5431,8 @@ const Modules = {
       size:'md', title:'Log an enquiry', sub:'Capture a walk in or phone call so it does not get forgotten.',
       body:`<div class="grid" style="gap:14px">
         <div class="grid g2">
-          ${H.field('Customer name',H.input('name',draft.name,'Thabo Nkosi'))}
-          ${H.field('Phone number',H.input('phone',draft.phone,'073 555 0182','tel'))}
+          ${H.field('Customer name',H.input('name',draft.name,'Customer name'))}
+          ${H.field('Phone number',H.input('phone',draft.phone,'082 000 0000','tel'))}
         </div>
         ${H.field('Email address',H.input('email',draft.email,'Optional','email'),'','optional')}
         <div class="grid g2">
