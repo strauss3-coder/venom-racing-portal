@@ -175,6 +175,10 @@ img{max-width:100%;display:block}
   transition:opacity .45s var(--ease),visibility .45s;
 }
 #login.hide{opacity:0;visibility:hidden;pointer-events:none}
+/* Generic. The login card swaps between its connect and sign-in forms,
+   and the #login.hide rule above only fades the whole overlay. */
+.hide{display:none !important}
+#login.hide{display:block !important}
 .login-card{
   width:100%;max-width:396px;padding:36px 32px;border-radius:var(--r-xl);
   background:linear-gradient(180deg,rgba(28,33,44,.92),rgba(16,19,26,.94));
@@ -898,6 +902,23 @@ table.tbl .mut{color:var(--text-3);font-size:12px}
     <div class="login-mark" id="loginMark"></div>
     <h1>Welcome back</h1>
     <p id="loginSub"></p>
+
+    <!-- First run only. The project details live on the Database page,
+         which is behind this screen, so an unconfigured portal has to be
+         able to connect from here or there is no way in at all. -->
+    <form class="login-form" id="setupForm" autocomplete="off">
+      <div class="field">
+        <label>Supabase project URL</label>
+        <input class="inp" type="url" id="setupUrl" placeholder="https://yourproject.supabase.co" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>Publishable key</label>
+        <input class="inp" type="text" id="setupKey" placeholder="sb_publishable_..." autocomplete="off" spellcheck="false">
+      </div>
+      <div class="login-err" id="setupErr"></div>
+      <button class="btn btn-pri btn-lg btn-block" type="submit" id="setupBtn">Connect project</button>
+    </form>
+
     <form class="login-form" id="loginForm" autocomplete="off">
       <div class="field" id="loginEmailField">
         <label>Email address</label>
@@ -1505,6 +1526,9 @@ const Cloud = {
       apikey:this.cfg.key,
       Authorization:'Bearer '+((this.session&&this.session.access_token)||this.cfg.key)
     },opts.headers||{});
+    if(!this.on){
+      throw new Error('This portal is not connected to a Supabase project yet. Enter your project URL and publishable key to connect.');
+    }
     let res;
     try{
       res = await fetch(this.cfg.url+path,Object.assign({},opts,{headers}));
@@ -5872,7 +5896,19 @@ const Shell = {
   paintLogin(){
     const em = (Cloud.session && Cloud.session.email) || Shell.lastEmail || '';
     if(em) U.el('#loginEmail').value = em;
-    U.el('#loginHint').innerHTML = 'Secured by Supabase Authentication.';
+
+    /* Two states on one screen: connect the project, then sign in. */
+    const ready = Cloud.on;
+    U.el('#setupForm').classList.toggle('hide',ready);
+    U.el('#loginForm').classList.toggle('hide',!ready);
+    U.el('#loginForgot').classList.toggle('hide',!ready);
+    U.el('#loginSub').textContent = ready
+      ? 'Sign in with your Supabase account to manage the '+BUSINESS.name+' website.'
+      : 'First, connect this portal to your Supabase project. You only do this once on this device.';
+    U.el('#loginHint').innerHTML = ready
+      ? 'Secured by Supabase Authentication.'
+      : 'Project Settings, API in your Supabase dashboard.';
+    if(ready && Cloud.cfg) U.el('#setupUrl').value = Cloud.cfg.url;
   },
 
   paintStatus(){
@@ -5903,6 +5939,39 @@ const Shell = {
     /* The only way into the portal: Supabase Authentication. This posts to
        /auth/v1/token?grant_type=password, which is exactly what the SDK's
        signInWithPassword() calls. No SDK, so the portal stays one file. */
+    U.el('#setupForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const err = U.el('#setupErr');
+      const btn = U.el('#setupBtn');
+      const url = Cloud.normaliseUrl(U.el('#setupUrl').value);
+      const key = U.el('#setupKey').value.trim();
+
+      if(!/^https:\/\/.+\..+/.test(url)) return err.textContent = 'That does not look like a project URL. It should read https://yourproject.supabase.co';
+      if(!key) return err.textContent = 'Paste the publishable key from Project Settings, API.';
+
+      btn.disabled = true; btn.textContent = 'Checking...'; err.textContent = '';
+      const prev = Cloud.cfg;
+      try{
+        Cloud.setCfg(url,key);
+        /* Auth health is the cheapest call that proves both the URL and
+           the key. It needs no account, so it isolates a bad connection
+           from a bad password. */
+        const res = await fetch(url+'/auth/v1/health',{headers:{apikey:key}});
+        if(res.status===401) throw new Error('That key was rejected. Copy the publishable key again from Project Settings, API.');
+        if(!res.ok) throw new Error('The project answered with status '+res.status+'. Check the URL is your project address.');
+        Shell.paintLogin();
+        U.el('#loginEmail').focus();
+        UI.toast('ok','Project connected','Now sign in with your Supabase account');
+      }catch(ex){
+        if(prev) Cloud.setCfg(prev.url,prev.key); else Cloud.cfg = null;
+        err.textContent = /Failed|NetworkError|Load failed/i.test(ex.message)
+          ? 'Could not reach that address. Check the project URL for typos.'
+          : ex.message;
+      }finally{
+        btn.disabled = false; btn.textContent = 'Connect project';
+      }
+    });
+
     U.el('#loginForm').addEventListener('submit',async e=>{
       e.preventDefault();
       const err = U.el('#loginErr');
@@ -5923,6 +5992,7 @@ const Shell = {
         err.textContent =
           /invalid|credential|grant/i.test(ex.message) ? 'That email and password do not match an account. Check for typos, or reset your password below.'
           : /confirm/i.test(ex.message) ? 'That account has not been confirmed yet. In Supabase, open Authentication, Users, and confirm it.'
+          : /not connected to a Supabase project/i.test(ex.message) ? ex.message
           : /connection|internet/i.test(ex.message) ? 'Cannot reach the database. Check your internet and try again.'
           : ex.message;
         U.el('#loginPass').select();
@@ -6000,7 +6070,7 @@ Shell.init();
 })();
 
 /* expose for console debugging and future integrations */
-window.VenomPortal = { BUSINESS, Store, Portal, Router, UI, U, DB, Cloud, Assets, Modules, MAP, SCHEMA_SQL };
+window.VenomPortal = { BUSINESS, Store, Portal, Router, Shell, UI, U, DB, Cloud, Assets, Modules, MAP, SCHEMA_SQL };
 
 })();
 </script>
