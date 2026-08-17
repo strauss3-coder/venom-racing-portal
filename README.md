@@ -17,6 +17,8 @@ install, no build step, and it keeps working when the internet drops.
 | `supabase-schema-plain.sql` | **Run this one.** Creates your database. |
 | `supabase-schema.sql` | The same SQL with explanations, for reading only. |
 | `add-me-as-owner.sql` | Gives your account permission to edit. Run once. |
+| `supabase-seed-content.sql` | Loads your services, stages, products, brands, FAQs and reviews into the database. Run once. |
+| `tests/` | Automated verification suites. See `tests/README.md`. |
 | `robots.txt` | Keeps the portal out of Google. |
 | `README.md` | This file. |
 
@@ -26,6 +28,12 @@ install, no build step, and it keeps working when the internet drops.
 > project, so any device that opens the link goes straight to the
 > sign-in screen. The steps below are the record of how it was set up,
 > and what to repeat if you ever move to a new Supabase project.
+
+> **The portal is the source of truth.** Services, performance stages,
+> products, brands, FAQs, reviews and all contact details are read from
+> the database by the live website. Edit them here and the site follows.
+> If the database is ever unreachable the site keeps showing its own
+> built-in copy, so a visitor never sees a blank section.
 
 ## Setting it up — five steps, about fifteen minutes
 
@@ -80,7 +88,20 @@ returns nothing, the email did not match — check for a typo.
 > write also checks that your account is on this allowlist, which can only be
 > edited here in the SQL Editor. Nobody can add themselves through the website.
 
-### 5. Connect the portal
+### 5. Load your content
+
+Open `supabase-seed-content.sql`, copy all of it, and run it in the SQL
+Editor. This loads your 20 services, 5 performance stages, 13 products, 22
+brands, 9 FAQs and 11 reviews.
+
+Without this the database is empty, and the website falls back to its own
+built-in HTML rather than reading from the portal.
+
+> Safe to run more than once — every row is an upsert keyed on a stable id.
+> Regenerate it from the portal's own data any time with
+> `cd tests && node genseed.js`.
+
+### 6. Connect the portal
 
 Double-click `index.html`. Go to **Database** in the left sidebar, paste in
 your Project URL and publishable key, and click **Test connection**, then
@@ -151,17 +172,14 @@ and add internal notes. Notes are only ever visible in this portal.
 
 ---
 
-## Sample records
+## No sample data
 
-The portal ships with three sample builds and two sample enquiries so you can
-see how everything works before real data arrives. They carry a red **Sample**
-badge, and they are never pushed to your database.
+There is none. Every record in this portal is real content taken from your
+existing website: 20 services, 5 performance stages, 13 NF Additives
+products, 22 brands, 9 FAQs and your 11 Google reviews.
 
-Your 11 Google reviews, all 20 services, the 5 stages, the 13 NF Additives
-products, the 22 brands and the 9 FAQs are **real** — taken from your existing
-website — so they carry no badge.
-
-Delete the samples before going live: **Database → Delete all sample records**.
+Builds and enquiries start empty. You log real jobs; the website posts real
+leads. Nothing is invented anywhere.
 
 ---
 
@@ -181,14 +199,14 @@ Connecting this portal does not change venomracing.co.za on its own.
 **Already done:** the contact forms on the website now post straight into this
 portal. Any enquiry from `index.html` or `contact.html` appears in your inbox.
 
-**Not yet done:** the rest of the website still reads from its own hardcoded
-HTML. So editing a service or a stage in the portal changes the portal, not the
-live page, until the website is wired up to read from Supabase too.
+**Also done:** services, performance stages, products, brands, FAQs, reviews
+and every contact detail now read from the database. Edit them in the portal
+and the live site follows on the next page load.
 
-The **Database** page has a *Copy website snippets* button that generates the
-exact JavaScript needed — `loadBuilds()`, `loadServices()`, `loadStages()`,
-`loadProducts()`, `loadBrands()`, `loadFaqs()`, `loadTestimonials()` and
-`loadSettings()`. Hand that to whoever maintains the website.
+**Not yet done:** the homepage's tabbed stage timeline and the gallery still
+render their own HTML. Both are driven by page scripts that hold their own tab
+and filter state, so they need a proper rebuild rather than in-place
+hydration. The Performance page carries the portal-driven stage cards.
 
 ---
 

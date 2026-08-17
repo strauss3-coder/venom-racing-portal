@@ -1796,107 +1796,80 @@ const Assets = {
 const SEED = () => ({
   meta:{ version:1, createdAt:Date.now(), lastSaved:Date.now(), siteLive:true },
 
-  /* Performance Builds - the primary business module.
-     The website carries no build records yet, so these three are marked
-     demo:true. They carry a red Sample badge, are excluded from every
-     push to Supabase, and can be cleared in one click on the Database
-     page. Replace them with real jobs before going live. */
-  builds:[
-    { demo:true, id:U.id('b'), title:'BMW M4 Stage 2', make:'BMW', model:'M4 Competition', year:2021,
-      engine:'3.0L S55 Twin Turbo', fuel:'Petrol', transmission:'DSG',
-      stage:'Stage 2', tuningType:'ECU + TCU', validation:'Dyno + V-Box',
-      powerBefore:375, powerAfter:0, torqueBefore:0, torqueAfter:0,
-      workDone:['Downpipes','Intake upgrade','Full exhaust system','Intercooler upgrade','Stage 2 ECU tune','Stage 1 TCU tune'],
-      description:'Sample record. Replace the power figures with the actual dyno sheet before publishing this build.',
-      customerRef:'', images:[], status:'draft', featured:false, published:false, archived:false,
-      views:0, completedAt:Date.now()-86400000*9, createdAt:Date.now()-86400000*11, updatedAt:Date.now()-86400000*9 },
-    { demo:true, id:U.id('b'), title:'Toyota Hilux 2.8 GD-6 Unichip', make:'Toyota', model:'Hilux 2.8 GD-6', year:2022,
-      engine:'2.8L GD-6', fuel:'Diesel', transmission:'Automatic',
-      stage:'Stage 1', tuningType:'Dastek Unichip', validation:'Dyno',
-      powerBefore:0, powerAfter:0, torqueBefore:0, torqueAfter:0,
-      workDone:['Dastek Unichip install','5-map switch','Dyno validation'],
-      description:'Sample record. A Unichip install with the in-cab 5-map switch: Immobiliser, Stock, Towing, Consumption and Performance.',
-      customerRef:'', images:[], status:'draft', featured:false, published:false, archived:false,
-      views:0, completedAt:Date.now()-86400000*20, createdAt:Date.now()-86400000*22, updatedAt:Date.now()-86400000*20 },
-    { demo:true, id:U.id('b'), title:'Audi RS3 Hybrid Turbo', make:'Audi', model:'RS3', year:2020,
-      engine:'2.5L TFSI', fuel:'Petrol', transmission:'DSG',
-      stage:'Stage 2+', tuningType:'ECU + TCU', validation:'Dyno + V-Box',
-      powerBefore:0, powerAfter:0, torqueBefore:0, torqueAfter:0,
-      workDone:['Hybrid turbo','Downpipe','Full exhaust','Boost pipes','Intercooler upgrade','Water-methanol injection','Stage 2+ ECU tune'],
-      description:'Sample record. Add the before and after dyno figures and the build photos, then publish.',
-      customerRef:'', images:[], status:'draft', featured:false, published:false, archived:false,
-      views:0, completedAt:Date.now()-86400000*34, createdAt:Date.now()-86400000*38, updatedAt:Date.now()-86400000*34 }
-  ],
+  /* Performance Builds. Proof of completed work that supports the
+     Performance page - not the centrepiece of the site. Starts empty:
+     the owner logs real jobs, and nothing is invented here. */
+  builds:[],
 
   /* The service menu, taken verbatim from performance.html and
      services.html. All real - edit the copy here and it changes once. */
   services:[
-    { id:U.id('s'), title:'ECU Calibration & Remapping', division:'Performance', icon:'ecu', anchor:'ecu-remapping', active:true, featured:true,
+    { id:'s_ecu-calibration-remapping', title:'ECU Calibration & Remapping', division:'Performance', icon:'ecu', anchor:'ecu-remapping', active:true, featured:true,
       description:'Specialising in ECU calibration across a wide range of manufacturers. Every map is optimised for boost, air/fuel ratio, ignition timing and torque management etc. - balancing real performance gains with long-term reliability.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Dastek Unichip Installation', division:'Performance', icon:'ecu', anchor:'unichip', active:true, featured:true,
+    { id:'s_dastek-unichip-installation', title:'Dastek Unichip Installation', division:'Performance', icon:'ecu', anchor:'unichip', active:true, featured:true,
       description:"Advanced accredited dealer with 20+ years' experience in installation and tuning across various manufacturer platforms - covering plug-and-play, warranty-conscious ECU control and options such as derating, road-speed regulation or removal, immobiliser functions and 5-map switching solutions.", image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Dyno Validation', division:'Performance', icon:'dyno', anchor:'dyno', active:true, featured:true,
+    { id:'s_dyno-validation', title:'Dyno Validation', division:'Performance', icon:'dyno', anchor:'dyno', active:true, featured:true,
       description:'In-house loading and inertia runs with calibrated power readings. Real-time EGT, AFR, wheel Nm, speed, kW, boost and many more monitoring readings available.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Performance Exhaust Systems', division:'Performance', icon:'exhaust', anchor:'exhaust', active:true, featured:true,
+    { id:'s_performance-exhaust-systems', title:'Performance Exhaust Systems', division:'Performance', icon:'exhaust', anchor:'exhaust', active:true, featured:true,
       description:'High-quality, custom-manufactured performance exhausts - from bolt-on systems to bespoke downpipes. Precision-welded to an exacting standard for a premium finish, cleaner flow and an unmistakable tone.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Turbo Upgrades', division:'Performance', icon:'turbo', anchor:'conversions', active:true, featured:false,
+    { id:'s_turbo-upgrades', title:'Turbo Upgrades', division:'Performance', icon:'turbo', anchor:'conversions', active:true, featured:false,
       description:'Upgraded turbochargers and supporting hardware for more boost and stronger response.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Hybrid Turbo Conversions', division:'Performance', icon:'turbo', anchor:'conversions', active:true, featured:false,
+    { id:'s_hybrid-turbo-conversions', title:'Hybrid Turbo Conversions', division:'Performance', icon:'turbo', anchor:'conversions', active:true, featured:false,
       description:'Hybrid and big-turbo conversions for a serious step up in performance.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Intercooler Upgrades', division:'Performance', icon:'intercooler', anchor:'', active:true, featured:false,
+    { id:'s_intercooler-upgrades', title:'Intercooler Upgrades', division:'Performance', icon:'intercooler', anchor:'', active:true, featured:false,
       description:'Bolt-on, larger and more efficient intercoolers - up to 200% capacity increase - for cooler charge air, delivering safer, more consistent power. Custom-built intercoolers to suit performance-specific applications.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Fuel System Upgrades', division:'Performance', icon:'additive', anchor:'', active:true, featured:false,
+    { id:'s_fuel-system-upgrades', title:'Fuel System Upgrades', division:'Performance', icon:'additive', anchor:'', active:true, featured:false,
       description:'Fuel lines, pumps and injectors to safely support higher fuelling demands. Catering for various fuels such as ethanol, methanol and race fuels.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Economy Tuning', division:'Performance', icon:'gauge', anchor:'', active:true, featured:false,
+    { id:'s_economy-tuning', title:'Economy Tuning', division:'Performance', icon:'gauge', anchor:'', active:true, featured:false,
       description:'We provide economy tunes that save fuel while still adding power to your vehicle.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Intake Systems', division:'Performance', icon:'intake', anchor:'', active:true, featured:false,
+    { id:'s_intake-systems', title:'Intake Systems', division:'Performance', icon:'intake', anchor:'', active:true, featured:false,
       description:'Performance cold-air induction and intake manifold upgrades for improved airflow.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Performance Diagnostics', division:'Performance', icon:'diagnostics', anchor:'', active:true, featured:false,
+    { id:'s_performance-diagnostics', title:'Performance Diagnostics', division:'Performance', icon:'diagnostics', anchor:'', active:true, featured:false,
       description:'Data logging and analysis to verify tuned setups, ensuring safety and reliability. Fault finding to keep tuned setups running safely and reliably.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Custom Performance Packages', division:'Performance', icon:'star', anchor:'', active:true, featured:false,
+    { id:'s_custom-performance-packages', title:'Custom Performance Packages', division:'Performance', icon:'star', anchor:'', active:true, featured:false,
       description:'Tailored builds from mild street setups to maximum-power projects.', image:'', createdAt:Date.now() },
 
-    { id:U.id('s'), title:'Minor Services', division:'Services & Repairs', icon:'wrench', anchor:'', active:true, featured:true,
+    { id:'s_minor-services', title:'Minor Services', division:'Services & Repairs', icon:'wrench', anchor:'', active:true, featured:true,
       description:'Regular servicing using quality oils, filters and manufacturer recommendations.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Major Services', division:'Services & Repairs', icon:'wrench', anchor:'', active:true, featured:true,
+    { id:'s_major-services', title:'Major Services', division:'Services & Repairs', icon:'wrench', anchor:'', active:true, featured:true,
       description:'Comprehensive scheduled maintenance including all required inspections and replacements.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Mechanical Repairs', division:'Services & Repairs', icon:'cog', anchor:'', active:true, featured:false,
+    { id:'s_mechanical-repairs', title:'Mechanical Repairs', division:'Services & Repairs', icon:'cog', anchor:'', active:true, featured:false,
       description:'Professional repairs for engine, suspension, braking and drivetrain components.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Diagnostics', division:'Services & Repairs', icon:'diagnostics', anchor:'', active:true, featured:false,
+    { id:'s_diagnostics', title:'Diagnostics', division:'Services & Repairs', icon:'diagnostics', anchor:'', active:true, featured:false,
       description:'Advanced fault finding using professional diagnostic equipment and dyno diagnostics.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Brake Services', division:'Services & Repairs', icon:'gauge', anchor:'', active:true, featured:false,
+    { id:'s_brake-services', title:'Brake Services', division:'Services & Repairs', icon:'gauge', anchor:'', active:true, featured:false,
       description:'Inspection, replacement and maintenance of braking systems.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Cooling Systems', division:'Services & Repairs', icon:'bolt', anchor:'', active:true, featured:false,
+    { id:'s_cooling-systems', title:'Cooling Systems', division:'Services & Repairs', icon:'bolt', anchor:'', active:true, featured:false,
       description:'Radiators, auxiliary coolant systems, thermo-regulating systems and overheating diagnosis.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Detailing Services', division:'Services & Repairs', icon:'sparkles', anchor:'', active:true, featured:false,
+    { id:'s_detailing-services', title:'Detailing Services', division:'Services & Repairs', icon:'sparkles', anchor:'', active:true, featured:false,
       description:'All vehicles are washed after a service before leaving the workshop - tyre shine and window washer fluid included. Optional extras: polishing, glazing, ceramic coating, nano coating, engine bay and undercarriage wash.', image:'', createdAt:Date.now() },
-    { id:U.id('s'), title:'Vehicle Inspections', division:'Services & Repairs', icon:'shield', anchor:'', active:true, featured:false,
+    { id:'s_vehicle-inspections', title:'Vehicle Inspections', division:'Services & Repairs', icon:'shield', anchor:'', active:true, featured:false,
       description:'Pre-purchase inspections, safety inspections and general vehicle health checks.', image:'', createdAt:Date.now() }
   ],
 
   /* The five performance stages, verbatim from index.html. */
   stages:[
-    { id:U.id('st'), label:'1', name:'Stage 1', tagline:'Software Only', icon:'ecu', active:true,
+    { id:'st_stage-1', label:'1', name:'Stage 1', tagline:'Software Only', icon:'ecu', active:true,
       description:'A pure ECU or TCU software remap - safe, reliable gains with no hardware changes required.',
       requirements:['Basic ECU software / remap','No hardware upgrades required'],
       benefits:['More Power','Better Response','Improved Driveability','Reliable Performance','Improved Fuel Consumption'],
       note:'', createdAt:Date.now() },
-    { id:U.id('st'), label:'1+', name:'Stage 1+', tagline:'Light Performance Upgrades', icon:'exhaust', active:true,
+    { id:'st_stage-1-plus', label:'1+', name:'Stage 1+', tagline:'Light Performance Upgrades', icon:'exhaust', active:true,
       description:'Light bolt-on hardware paired with customised tune adjustments, creating a Stage 1+ tune for a noticeable step up.',
       requirements:['Decat or downpipe','Optional upgraded exhaust system','Optional intake / induction','Optional Stage 1 TCU (gearbox) tune'],
       benefits:['More Power','Better Response','Improved Driveability','Reliable Performance','Improved Fuel Consumption'],
       note:'', createdAt:Date.now() },
-    { id:U.id('st'), label:'2', name:'Stage 2', tagline:'Intermediate Performance Build', icon:'dyno', active:true,
+    { id:'st_stage-2', label:'2', name:'Stage 2', tagline:'Intermediate Performance Build', icon:'dyno', active:true,
       description:'A balanced intermediate build - supporting hardware plus a Stage 2 software tune.',
       requirements:['Downpipe','Intake / induction upgrade','Exhaust mid-box delete or full upgraded exhaust','Intercooler upgrade or Water-Methanol Injection (WMI)','Stage 2 ECU software tune','Optional Stage 1 or 2 TCU tune'],
       benefits:['More Power','Better Response','Improved Driveability','Reliable Performance'],
       note:'', createdAt:Date.now() },
-    { id:U.id('st'), label:'2+', name:'Stage 2+', tagline:'Advanced Performance Setup', icon:'turbo', active:true,
+    { id:'st_stage-2-plus', label:'2+', name:'Stage 2+', tagline:'Advanced Performance Setup', icon:'turbo', active:true,
       description:'Advanced setup consisting of Stage 2 hardware but introducing a hybrid turbo with matched Stage 2+ software.',
       requirements:['Downpipe','Intake / induction upgrade','Full upgraded exhaust','Boost Pipes','Intercooler upgrade','Water-Methanol Injection (WMI)','Hybrid turbos','Stage 2+ ECU software tune','Supportive ECU tune'],
       benefits:['More Power','Better Response','Improved Driveability','Reliable Performance'],
       note:'', createdAt:Date.now() },
-    { id:U.id('st'), label:'3', name:'Stage 3', tagline:'High Performance / Maximum Power Build', icon:'stage', active:true,
+    { id:'st_stage-3', label:'3', name:'Stage 3', tagline:'High Performance / Maximum Power Build', icon:'stage', active:true,
       description:'Our maximum-power build - full supporting hardware, a bigger turbo and optional forged internals.',
       requirements:['Downpipe and full exhaust system','Intercooler upgrade','Water-Methanol Injection (WMI)','Upgraded larger / bigger turbo','Optional forged engine internals','Stage 3 ECU software tune','Stage 2+ / 3 TCU software','Optional performance modifications'],
       benefits:['Maximum Power','Track-Like Response','Maintaining Driveability','High RPM Power Band','Race Car Feel'],
@@ -1906,74 +1879,74 @@ const SEED = () => ({
   /* NF Additives range as listed on performance.html. Prices are not
      published on the website, so they start at zero for the owner to fill in. */
   products:[
-    { id:U.id('p'), name:'NF Ultra Race Fuel Concentrate', range:'NF Additives', type:'Fuel enhancer', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Petrol Injector Cleaner 3-in-1', range:'NF Additives', type:'Injector cleaner', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Fuel Enhancer', range:'NF Additives', type:'Fuel enhancer', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Petrol 7-in-1 Service', range:'NF Additives', type:'Service treatment', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Race Octane Booster', range:'NF Additives', type:'Octane booster', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Super Street Octane Booster', range:'NF Additives', type:'Octane booster', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Sport Octane Booster', range:'NF Additives', type:'Octane booster', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Heavy Duty Fuel Guard', range:'NF Additives', type:'Protection additive', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Diesel Booster', range:'NF Additives', type:'Fuel enhancer', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF CVT & ATF Treatment', range:'NF Additives', type:'Transmission treatment', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Outback Guard', range:'NF Additives', type:'Protection additive', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Diesel Injector Cleaner 3-in-1', range:'NF Additives', type:'Injector cleaner', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
-    { id:U.id('p'), name:'NF Diesel 4-in-1 Service', range:'NF Additives', type:'Service treatment', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() }
+    { id:'p_nf-ultra-race-fuel-concentrate', name:'NF Ultra Race Fuel Concentrate', range:'NF Additives', type:'Fuel enhancer', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-petrol-injector-cleaner-3-in-1', name:'NF Petrol Injector Cleaner 3-in-1', range:'NF Additives', type:'Injector cleaner', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-fuel-enhancer', name:'NF Fuel Enhancer', range:'NF Additives', type:'Fuel enhancer', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-petrol-7-in-1-service', name:'NF Petrol 7-in-1 Service', range:'NF Additives', type:'Service treatment', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-race-octane-booster', name:'NF Race Octane Booster', range:'NF Additives', type:'Octane booster', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-super-street-octane-booster', name:'NF Super Street Octane Booster', range:'NF Additives', type:'Octane booster', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-sport-octane-booster', name:'NF Sport Octane Booster', range:'NF Additives', type:'Octane booster', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-heavy-duty-fuel-guard', name:'NF Heavy Duty Fuel Guard', range:'NF Additives', type:'Protection additive', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-diesel-booster', name:'NF Diesel Booster', range:'NF Additives', type:'Fuel enhancer', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-cvt-atf-treatment', name:'NF CVT & ATF Treatment', range:'NF Additives', type:'Transmission treatment', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-outback-guard', name:'NF Outback Guard', range:'NF Additives', type:'Protection additive', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-diesel-injector-cleaner-3-in-1', name:'NF Diesel Injector Cleaner 3-in-1', range:'NF Additives', type:'Injector cleaner', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() },
+    { id:'p_nf-diesel-4-in-1-service', name:'NF Diesel 4-in-1 Service', range:'NF Additives', type:'Service treatment', size:'', price:0, description:'', image:'', inStock:true, active:true, createdAt:Date.now() }
   ],
 
   /* Preferred performance brands, in the order the site's marquee runs. */
   brands:[
-    { id:U.id('br'), name:'Dastek Unichip', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'Alientech', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'De Graaf Exhausts', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'Ross-Tech VCDS', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'Viper Exhausts', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'MPPS', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'Cirrus Intercoolers', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'DimSport', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'Tactrix', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'TunerPro', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'UCM 100', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'Toyota Techstream', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'MMC Flash', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'AutoTuner', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'WinOLS 5', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'bFlash', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'CMD', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'BitBox', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'TuneZilla', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'BNB Exhausts', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'F1-X', logo:'', url:'', active:true, createdAt:Date.now() },
-    { id:U.id('br'), name:'TNT', logo:'', url:'', active:true, createdAt:Date.now() }
+    { id:'br_dastek-unichip', name:'Dastek Unichip', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_alientech', name:'Alientech', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_de-graaf-exhausts', name:'De Graaf Exhausts', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_ross-tech-vcds', name:'Ross-Tech VCDS', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_viper-exhausts', name:'Viper Exhausts', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_mpps', name:'MPPS', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_cirrus-intercoolers', name:'Cirrus Intercoolers', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_dimsport', name:'DimSport', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_tactrix', name:'Tactrix', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_tunerpro', name:'TunerPro', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_ucm-100', name:'UCM 100', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_toyota-techstream', name:'Toyota Techstream', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_mmc-flash', name:'MMC Flash', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_autotuner', name:'AutoTuner', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_winols-5', name:'WinOLS 5', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_bflash', name:'bFlash', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_cmd', name:'CMD', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_bitbox', name:'BitBox', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_tunezilla', name:'TuneZilla', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_bnb-exhausts', name:'BNB Exhausts', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_f1-x', name:'F1-X', logo:'', url:'', active:true, createdAt:Date.now() },
+    { id:'br_tnt', name:'TNT', logo:'', url:'', active:true, createdAt:Date.now() }
   ],
 
   /* FAQs, verbatim from faqs.html. */
   faqs:[
-    { id:U.id('f'), category:'General', featured:false, active:true,
+    { id:'f_what-makes-venom-racing-different-from-a-g', category:'General', featured:false, active:true,
       question:'What makes Venom Racing different from a general workshop?',
       answer:'Venom Racing stands apart through custom dyno tuning, advanced diagnostics, complete performance builds and personal customer service, all led by an experienced master tuner. Unlike conventional workshops that rely on generic solutions, every vehicle is assessed, tested and calibrated according to its specific hardware, fuel, condition and performance goals to deliver safe, reliable and measurable results.', createdAt:Date.now() },
-    { id:U.id('f'), category:'General', featured:false, active:true,
+    { id:'f_what-are-your-operating-hours', category:'General', featured:false, active:true,
       question:'What are your operating hours?',
       answer:"We're open Monday to Friday, 08:00 to 17:00. Get in touch via phone or WhatsApp to book a consultation.", createdAt:Date.now() },
-    { id:U.id('f'), category:'ECU Tuning & Unichip', featured:true, active:true,
+    { id:'f_will-tuning-void-my-vehicle', category:'ECU Tuning & Unichip', featured:true, active:true,
       question:"Will tuning void my vehicle's warranty?",
       answer:"A Dastek Unichip is a piggyback system that doesn't alter the factory ECU file, which is why it's a common choice for warranty-sensitive vehicles. Direct ECU remaps are a separate discussion - we'll talk you through the trade-offs for your specific vehicle at consultation.", createdAt:Date.now() },
-    { id:U.id('f'), category:'ECU Tuning & Unichip', featured:true, active:true,
+    { id:'f_what-is-the-5-map-switch-system', category:'ECU Tuning & Unichip', featured:true, active:true,
       question:'What is the 5-map switch system?',
       answer:'Our Unichip installs include an in-cab switch giving you up to 5 tuned profiles: Immobiliser, Stock, Towing, Consumption, and Performance - letting you match engine behaviour to what you’re doing that day.', createdAt:Date.now() },
-    { id:U.id('f'), category:'ECU Tuning & Unichip', featured:true, active:true,
+    { id:'f_which-vehicle-types-does-dastek-unichip-tu', category:'ECU Tuning & Unichip', featured:true, active:true,
       question:'Which vehicle types does Dastek Unichip tuning suit?',
       answer:'We cover most manufacturers from classic to modern vehicle platforms, from utility vehicles to supercars. Get in touch to confirm compatibility for your vehicle.', createdAt:Date.now() },
-    { id:U.id('f'), category:'Fabrication & Conversions', featured:false, active:true,
+    { id:'f_do-you-build-custom-performance-exhaust-sy', category:'Fabrication & Conversions', featured:false, active:true,
       question:'Do you build custom performance exhaust systems?',
       answer:'Yes - we manufacture high-quality performance exhaust systems in-house, from bolt-on systems to bespoke downpipes and headers, precision-welded to an exacting standard for a premium finish and cleaner flow.', createdAt:Date.now() },
-    { id:U.id('f'), category:'Fabrication & Conversions', featured:false, active:true,
+    { id:'f_do-you-do-full-engine-conversions', category:'Fabrication & Conversions', featured:false, active:true,
       question:'Do you do full engine conversions?',
       answer:'Yes - including fully forged engine conversions, custom turbocharger installations, and structural welding for non-standard engine builds.', createdAt:Date.now() },
-    { id:U.id('f'), category:'Booking & Process', featured:true, active:true,
+    { id:'f_how-long-does-a-typical-installation-take', category:'Booking & Process', featured:true, active:true,
       question:'How long does a typical installation take?',
       answer:"Turnaround depends on the service - hardware installs and dyno tuning are usually same-day, while fabrication work varies with complexity. We'll confirm a timeline at your consultation.", createdAt:Date.now() },
-    { id:U.id('f'), category:'Booking & Process', featured:false, active:true,
+    { id:'f_how-do-i-get-a-quote', category:'Booking & Process', featured:false, active:true,
       question:'How do I get a quote?',
       answer:"Use the quote request form on our Contact page, or reach us directly by phone or WhatsApp - we'll ask a few questions about your vehicle and goals before booking an inspection.", createdAt:Date.now() }
   ],
@@ -2010,27 +1983,27 @@ const SEED = () => ({
      Not demo data - these are real, so they carry no Sample badge.
      `subject` is left blank where the review does not name the work. */
   testimonials:[
-    { id:U.id('t'), name:'William Nalane', subject:'', rating:5, photo:'', source:'Google', dateText:'5 days ago', featured:true,
+    { id:'t_william-nalane', name:'William Nalane', subject:'', rating:5, photo:'', source:'Google', dateText:'5 days ago', featured:true,
       review:'Perfect service and quality work. No return job. Friendly and good customer care. Most important is the honesty.', createdAt:Date.now() },
-    { id:U.id('t'), name:'Newqishke du Preez', subject:'', rating:5, photo:'', source:'Google', dateText:'3 weeks ago', featured:false,
+    { id:'t_newqishke-du-preez', name:'Newqishke du Preez', subject:'', rating:5, photo:'', source:'Google', dateText:'3 weeks ago', featured:false,
       review:'Friendly & excellent service!', createdAt:Date.now() },
-    { id:U.id('t'), name:'Robert Wagner', subject:'Servicing and detailing', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:true,
+    { id:'t_robert-wagner', name:'Robert Wagner', subject:'Servicing and detailing', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:true,
       review:'Always very good service and extremely clean workmanship. Very knowledgeable, no problem unsolvable. Very lucky to know where to take my Hilux or any other car for anything, even just a good wash and detailing!', createdAt:Date.now() },
-    { id:U.id('t'), name:'George Nel', subject:'', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:false,
+    { id:'t_george-nel', name:'George Nel', subject:'', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:false,
       review:'I will always come to Drikus. Moerse satisfied. Thank you very much.', createdAt:Date.now() },
-    { id:U.id('t'), name:'ForTheFairies', subject:'Vehicle service', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:false,
+    { id:'t_forthefairies', name:'ForTheFairies', subject:'Vehicle service', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:false,
       review:"Had my car serviced here. First time I'm happy with a service and it didn't take an entire day. The staff is super friendly and on par with their servicing. Pricing is perfect too.", createdAt:Date.now() },
-    { id:U.id('t'), name:'Bertus Swart', subject:'', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:true,
+    { id:'t_bertus-swart', name:'Bertus Swart', subject:'', rating:5, photo:'', source:'Google', dateText:'a month ago', featured:true,
       review:"Excellent service, professional workmanship, and the best customer service I've received - all delivered with a smile. Highly recommended!", createdAt:Date.now() },
-    { id:U.id('t'), name:'Chane Steenberg', subject:'', rating:5, photo:'', source:'Google', dateText:'4 months ago', featured:false,
+    { id:'t_chane-steenberg', name:'Chane Steenberg', subject:'', rating:5, photo:'', source:'Google', dateText:'4 months ago', featured:false,
       review:'Very friendly service. Keeps in contact. Would 100% refer.', createdAt:Date.now() },
-    { id:U.id('t'), name:'Ndumiso Mthethwa', subject:'Conversion, respray and servicing', rating:5, photo:'', source:'Google', dateText:'4 months ago', featured:false,
+    { id:'t_ndumiso-mthethwa', name:'Ndumiso Mthethwa', subject:'Conversion, respray and servicing', rating:5, photo:'', source:'Google', dateText:'4 months ago', featured:false,
       review:'They are the best in Witbank - car conversion, body respray, servicing the car. Top notch. Big up.', createdAt:Date.now() },
-    { id:U.id('t'), name:'Pet Kgwedi', subject:'Performance diagnostics', rating:5, photo:'', source:'Google', dateText:'6 months ago', featured:true,
+    { id:'t_pet-kgwedi', name:'Pet Kgwedi', subject:'Performance diagnostics', rating:5, photo:'', source:'Google', dateText:'6 months ago', featured:true,
       review:"My car had performance issues, so I decided to take it to Venom for a checkup. Through their intensive diagnostic systems they managed to pick up the problem and got it fixed beyond perfection, I must say. Probably the neatest dealership in town. They just don't disappoint.", createdAt:Date.now() },
-    { id:U.id('t'), name:'Mpho Calvin Mokhethea', subject:'Annual service - Mazda CX-5', rating:5, photo:'', source:'Google', dateText:'11 months ago', featured:false,
+    { id:'t_mpho-calvin-mokhethea', name:'Mpho Calvin Mokhethea', subject:'Annual service - Mazda CX-5', rating:5, photo:'', source:'Google', dateText:'11 months ago', featured:false,
       review:'Took my Mazda CX-5 yesterday for an annual service - wow, Venom outdid themselves. Thank you guys for treating my car with care… it runs like new.', createdAt:Date.now() },
-    { id:U.id('t'), name:'DJ Slash Productions SA', subject:'Ford Focus ST225 repairs and fabrication', rating:5, photo:'', source:'Google', dateText:'a year ago', featured:true,
+    { id:'t_dj-slash-productions-sa', name:'DJ Slash Productions SA', subject:'Ford Focus ST225 repairs and fabrication', rating:5, photo:'', source:'Google', dateText:'a year ago', featured:true,
       review:"Yet again, Dricus and the team have outdone themselves. I can't thank you enough for treating my pride and joy as if it was my own. My Focus 225ST had a bad coolant leak, which they found by the Welsh plugs. They went further to find the coil pack wires were damaged and the intake pipe had issues, and sorted some leaks. On top of that they did a Y-piece straight pipe. One can see why this is a 5-star, RMI-Approved workshop. Keep up the good work - see you again soon!", createdAt:Date.now() }
   ],
 
@@ -2068,20 +2041,8 @@ const SEED = () => ({
     }
   },
 
-  /* Two sample leads so the inbox, statuses and reply actions can be
-     tried before the website starts sending real ones. Both demo:true. */
-  enquiries:[
-    { demo:true, id:U.id('e'), name:'Sample Enquiry', phone:'082 000 0000', email:'sample@example.com',
-      make:'Volkswagen', model:'Golf 7 GTI', registration:'', service:'ECU Calibration',
-      vehicle:'Volkswagen Golf 7 GTI', source:'Website form', status:'unread', notes:'',
-      message:'This is a sample enquiry so you can see how the inbox works. Delete it once real enquiries start coming through.',
-      createdAt:Date.now()-3600000*5 },
-    { demo:true, id:U.id('e'), name:'Sample Enquiry Two', phone:'082 000 0001', email:'sample2@example.com',
-      make:'Toyota', model:'Hilux 2.8 GD-6', registration:'', service:'Dyno Tuning',
-      vehicle:'Toyota Hilux 2.8 GD-6', source:'WhatsApp', status:'contacted', notes:'',
-      message:'A second sample enquiry, already marked as contacted, so you can see the status flow.',
-      createdAt:Date.now()-86400000*2 }
-  ],
+  /* Real leads only. The website posts straight into this table. */
+  enquiries:[],
 
   appearance:{
     primary:BUSINESS.brand.primary, accent:BUSINESS.brand.accent, success:BUSINESS.brand.success,
@@ -2696,35 +2657,35 @@ Portal.register({
     return `
     ${H.head('Good day, welcome back','Here is how the '+BUSINESS.name+' website is performing right now.',`
       <button class="btn" data-act="refresh">${ICON.refresh} Refresh</button>
-      <button class="btn btn-pri" data-act="addbuild">${ICON.plus} Add build</button>`)}
+      <button class="btn btn-pri" data-go="services">${ICON.wrench} Edit services</button>`)}
 
     <div class="stats" style="margin-bottom:16px">
       ${H.stat({label:'Website status',value:live?'Live':'Offline',icon:'globe',tone:live?'ok':'dan',sub:live?'<span class="trend up">All systems normal</span>':'<span class="trend down">Visitors see a notice</span>'})}
-      ${H.stat({label:'Builds published',count:st.published,icon:'stage',sub:`<span>${st.drafts} draft${st.drafts===1?'':'s'} · ${st.featured} featured</span>`})}
+      ${H.stat({label:'Services live',count:st.services,icon:'wrench',sub:`<span>${st.products} products · ${st.brands} brands</span>`})}
+      ${H.stat({label:'Performance stages',count:st.stages,icon:'stage',tone:'vio',sub:'<span>Shown on your Performance page</span>'})}
       ${H.stat({label:'Average power gain',value:st.gainAvg?('+'+st.gainAvg+' kW'):'Not set',icon:'dyno',tone:st.gainAvg?'ok':'',sub:st.bestGain?`<span>Best so far +${st.bestGain} kW</span>`:'<span>Add dyno figures to a build</span>'})}
-      ${H.stat({label:'Services listed',count:st.services,icon:'wrench',tone:'vio',sub:`<span>${st.stages} performance stages</span>`})}
       ${H.stat({label:'Unread enquiries',count:st.unread,icon:'inbox',tone:st.unread?'dan':'ok',sub:`<span>${st.enquiries} enquiries in total</span>`})}
-      ${H.stat({label:'Gallery images',count:st.gallery,icon:'image',sub:`<span>${st.testimonials} reviews published</span>`})}
+      ${H.stat({label:'Builds logged',count:st.published,icon:'image',sub:`<span>${st.drafts} draft${st.drafts===1?'':'s'} · proof of work</span>`})}
     </div>
 
     <div class="grid" style="grid-template-columns:1.55fr 1fr;align-items:start;margin-bottom:16px" data-dash-cols>
       ${H.card('Quick actions','The jobs you do most often',`
         <div class="qa-grid">
-          <button class="qa" data-act="addbuild"><span class="qa-ic">${ICON.plus}</span><b>Add a build</b><small>Log a completed job</small></button>
-          <button class="qa" data-go="enquiries"><span class="qa-ic">${ICON.inbox}</span><b>View enquiries</b><small>${st.unread} unread</small></button>
           <button class="qa" data-go="services"><span class="qa-ic">${ICON.wrench}</span><b>Edit services</b><small>${st.services} live</small></button>
           <button class="qa" data-go="stages"><span class="qa-ic">${ICON.stage}</span><b>Performance stages</b><small>${st.stages} stages</small></button>
+          <button class="qa" data-go="enquiries"><span class="qa-ic">${ICON.inbox}</span><b>View enquiries</b><small>${st.unread} unread</small></button>
+          <button class="qa" data-go="products"><span class="qa-ic">${ICON.additive}</span><b>Products &amp; brands</b><small>${st.products} products</small></button>
+          <button class="qa" data-act="addbuild"><span class="qa-ic">${ICON.plus}</span><b>Add a build</b><small>Log a completed job</small></button>
           <button class="qa" data-go="gallery"><span class="qa-ic">${ICON.image}</span><b>Manage gallery</b><small>${st.gallery} images</small></button>
-          <button class="qa" data-go="products"><span class="qa-ic">${ICON.additive}</span><b>NF Additives</b><small>${st.products} products</small></button>
           <button class="qa" data-go="testimonials"><span class="qa-ic">${ICON.star}</span><b>Reviews</b><small>${st.testimonials} published</small></button>
           <button class="qa" data-act="backup"><span class="qa-ic">${ICON.download}</span><b>Download backup</b><small>Save everything</small></button>
         </div>`)}
       ${H.card('Website health','A quick check of your content',`
         <div class="grid" style="gap:14px">
           ${[
-            {l:'Builds with photos',n:Store.list('builds').filter(b=>!b.archived&&b.images&&b.images.length).length,d:Math.max(st.total,1),tone:''},
-            {l:'Builds with dyno figures',n:Store.list('builds').filter(b=>!b.archived&&Number(b.powerAfter)>0).length,d:Math.max(st.total,1),tone:'ok'},
-            {l:'Gallery images uploaded',n:st.gallery,d:12,tone:'vio'},
+            {l:'Services with a description',n:Store.list('services').filter(x=>x.active&&x.description).length,d:Math.max(st.services,1),tone:''},
+            {l:'Stages fully written up',n:Store.list('stages').filter(x=>x.active&&(x.requirements||[]).length).length,d:Math.max(st.stages,1),tone:'ok'},
+            {l:'Builds with dyno figures',n:Store.list('builds').filter(b=>!b.archived&&Number(b.powerAfter)>0).length,d:Math.max(st.total,1),tone:'vio'},
             {l:'FAQs published',n:st.faqs,d:9,tone:'warn'}
           ].map(r=>{
             const pct = Math.min(100,Math.round((r.n/r.d)*100));
@@ -2794,86 +2755,11 @@ Portal.register({
 });
 
 /* ==================================================================
-   MODULE: Performance Builds  (primary business module)
-
-   Modelled directly on the reference vehicles module: filter bar with
-   search / make / sort, segmented tabs with live counts, responsive
-   card grid, tabbed editor modal, and a more-actions menu carrying
-   duplicate, archive and delete.
-   ================================================================== */
-Portal.register({
-  id:'builds', title:'Performance Builds', sub:'Completed work shown on your website', icon:'stage', group:'Workshop', skeleton:'cards',
-  badge(st){ return st.published ? {text:String(st.published),mut:true} : null; },
-  state:{ q:'', tab:'all', make:'', sort:'newest' },
-  render(params){
-    if(params.q!=null && params.q!=='') this.state.q = params.q;
-    const s = this.state;
-    const all = Store.list('builds');
-    const counts = {
-      all:all.filter(b=>!b.archived).length,
-      published:all.filter(b=>!b.archived&&b.published).length,
-      drafts:all.filter(b=>!b.archived&&!b.published).length,
-      featured:all.filter(b=>!b.archived&&b.featured).length,
-      archived:all.filter(b=>b.archived).length
-    };
-    const makes = Array.from(new Set(all.map(b=>b.make).filter(Boolean))).sort();
-    const list = Modules.filterBuilds(all,s);
-
-    return `
-    ${H.head('Performance Builds','Log every completed build with its dyno figures and photos. Published builds appear on your website.',`
-      <button class="btn" data-act="export">${ICON.download} Export CSV</button>
-      <button class="btn btn-pri" data-act="add">${ICON.plus} Add build</button>`)}
-
-    <div class="filters">
-      <label class="search">${ICON.search}
-        <input id="bq" placeholder="Search by title, make, model, stage or engine" value="${U.esc(s.q)}">
-      </label>
-      <select class="sel" id="bmake" aria-label="Filter builds by vehicle make">
-        <option value="">All makes</option>
-        ${makes.map(m=>`<option value="${U.esc(m)}" ${m===s.make?'selected':''}>${U.esc(m)}</option>`).join('')}
-      </select>
-      <select class="sel" id="bsort" aria-label="Sort builds">
-        ${[['newest','Newest first'],['oldest','Oldest first'],['gain-hi','Biggest power gain'],['power-hi','Highest final power'],['stage','Stage order'],['views','Most viewed'],['name','Title A to Z']]
-          .map(o=>`<option value="${o[0]}" ${s.sort===o[0]?'selected':''}>${o[1]}</option>`).join('')}
-      </select>
-    </div>
-
-    <div class="segbar" style="margin-bottom:18px">
-      ${[['all','All builds'],['published','Published'],['drafts','Drafts'],['featured','Featured'],['archived','Archived']]
-        .map(t=>`<button data-tab="${t[0]}" class="${s.tab===t[0]?'on':''}">${t[1]}<span class="n">${counts[t[0]]}</span></button>`).join('')}
-    </div>
-
-    ${list.length ? `<div class="veh-grid">${list.map(Modules.buildCard).join('')}</div>`
-      : H.empty('stage', s.q||s.make ? 'No builds match your search' : 'No builds in this list yet',
-          s.q||s.make ? 'Try a different search term or clear your filters.' : 'Add your first build and it will appear on your website as soon as you publish it.',
-          `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add build</button>`)}
-
-    ${list.length?`<div style="margin-top:20px;text-align:center;color:var(--text-3);font-size:12.5px">Showing ${list.length} of ${counts.all} builds${(()=>{const g=list.filter(b=>Number(b.powerAfter)>0&&Number(b.powerBefore)>0);return g.length?' · Average gain +'+Math.round(g.reduce((a,b)=>a+(b.powerAfter-b.powerBefore),0)/g.length)+' kW':'';})()}</div>`:''}
-    `;
-  },
-  mount(root){
-    const s = this.state;
-    const q = U.el('#bq',root);
-    if(q) q.addEventListener('input',U.debounce(()=>{ s.q=q.value; Modules.repaintBuilds(); },220));
-    const nm = U.el('#bmake',root); if(nm) nm.addEventListener('change',()=>{ s.make=nm.value; Modules.repaintBuilds(); });
-    const ns = U.el('#bsort',root); if(ns) ns.addEventListener('change',()=>{ s.sort=ns.value; Modules.repaintBuilds(); });
-    U.on(root,'click','[data-tab]',(e,b)=>{ s.tab=b.dataset.tab; Router.refresh(); });
-    U.on(root,'click','[data-act="add"]',()=>Modules.buildForm(null));
-    U.on(root,'click','[data-act="export"]',()=>Modules.exportBuilds());
-    U.on(root,'click','[data-bact]',(e,b)=>Modules.buildAction(b.dataset.bact,b.dataset.id));
-    U.on(root,'click','[data-bopen]',(e,b)=>{
-      if(e.target.closest('[data-bact]')) return;
-      Modules.buildForm(b.dataset.bopen);
-    });
-  }
-});
-
-/* ==================================================================
    MODULE: Services
    The menu behind performance.html and services.html.
    ================================================================== */
 Portal.register({
-  id:'services', title:'Services', sub:'What you offer, by division', icon:'wrench', group:'Workshop', instant:true,
+  id:'services', title:'Services', sub:'Your performance and workshop menu', icon:'wrench', group:'Performance', instant:true,
   state:{ division:'Performance' },
   render(){
     const s = this.state;
@@ -2933,7 +2819,7 @@ Portal.register({
    MODULE: Performance Stages
    ================================================================== */
 Portal.register({
-  id:'stages', title:'Performance Stages', sub:'Stage 1 through Stage 3', icon:'stage', group:'Workshop', instant:true,
+  id:'stages', title:'Performance Stages', sub:'Stage 1 through Stage 3', icon:'stage', group:'Performance', instant:true,
   render(){
     const list = Store.list('stages');
     return `
@@ -3002,7 +2888,7 @@ Portal.register({
    The NF Additives range and the preferred performance brands marquee.
    ================================================================== */
 Portal.register({
-  id:'products', title:'Products & Brands', sub:'NF Additives and supplier brands', icon:'additive', group:'Workshop', instant:true,
+  id:'products', title:'Products & Brands', sub:'NF Additives and supplier brands', icon:'additive', group:'Performance', instant:true,
   state:{ tab:'products' },
   render(){
     const s = this.state;
@@ -3089,6 +2975,81 @@ Portal.register({
       const map = {}; Store.list('brands').forEach(x=>map[x.id]=x);
       Store.data.brands = ids.map(id=>map[id]).filter(Boolean);
       Store.persist(); UI.toast('ok','Order updated','Brands reordered');
+    });
+  }
+});
+
+/* ==================================================================
+   MODULE: Performance Builds  (primary business module)
+
+   Modelled directly on the reference vehicles module: filter bar with
+   search / make / sort, segmented tabs with live counts, responsive
+   card grid, tabbed editor modal, and a more-actions menu carrying
+   duplicate, archive and delete.
+   ================================================================== */
+Portal.register({
+  id:'builds', title:'Performance Builds', sub:'Proof of work supporting your Performance page', icon:'dyno', group:'Proof of work', skeleton:'cards',
+  badge(st){ return st.published ? {text:String(st.published),mut:true} : null; },
+  state:{ q:'', tab:'all', make:'', sort:'newest' },
+  render(params){
+    if(params.q!=null && params.q!=='') this.state.q = params.q;
+    const s = this.state;
+    const all = Store.list('builds');
+    const counts = {
+      all:all.filter(b=>!b.archived).length,
+      published:all.filter(b=>!b.archived&&b.published).length,
+      drafts:all.filter(b=>!b.archived&&!b.published).length,
+      featured:all.filter(b=>!b.archived&&b.featured).length,
+      archived:all.filter(b=>b.archived).length
+    };
+    const makes = Array.from(new Set(all.map(b=>b.make).filter(Boolean))).sort();
+    const list = Modules.filterBuilds(all,s);
+
+    return `
+    ${H.head('Performance Builds','Completed jobs that prove the work on your Performance page. Log the dyno figures and photos for each one.',`
+      <button class="btn" data-act="export">${ICON.download} Export CSV</button>
+      <button class="btn btn-pri" data-act="add">${ICON.plus} Add build</button>`)}
+
+    <div class="filters">
+      <label class="search">${ICON.search}
+        <input id="bq" placeholder="Search by title, make, model, stage or engine" value="${U.esc(s.q)}">
+      </label>
+      <select class="sel" id="bmake" aria-label="Filter builds by vehicle make">
+        <option value="">All makes</option>
+        ${makes.map(m=>`<option value="${U.esc(m)}" ${m===s.make?'selected':''}>${U.esc(m)}</option>`).join('')}
+      </select>
+      <select class="sel" id="bsort" aria-label="Sort builds">
+        ${[['newest','Newest first'],['oldest','Oldest first'],['gain-hi','Biggest power gain'],['power-hi','Highest final power'],['stage','Stage order'],['views','Most viewed'],['name','Title A to Z']]
+          .map(o=>`<option value="${o[0]}" ${s.sort===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="segbar" style="margin-bottom:18px">
+      ${[['all','All builds'],['published','Published'],['drafts','Drafts'],['featured','Featured'],['archived','Archived']]
+        .map(t=>`<button data-tab="${t[0]}" class="${s.tab===t[0]?'on':''}">${t[1]}<span class="n">${counts[t[0]]}</span></button>`).join('')}
+    </div>
+
+    ${list.length ? `<div class="veh-grid">${list.map(Modules.buildCard).join('')}</div>`
+      : H.empty('stage', s.q||s.make ? 'No builds match your search' : 'No builds in this list yet',
+          s.q||s.make ? 'Try a different search term or clear your filters.' : 'Add your first build and it will appear on your website as soon as you publish it.',
+          `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add build</button>`)}
+
+    ${list.length?`<div style="margin-top:20px;text-align:center;color:var(--text-3);font-size:12.5px">Showing ${list.length} of ${counts.all} builds${(()=>{const g=list.filter(b=>Number(b.powerAfter)>0&&Number(b.powerBefore)>0);return g.length?' · Average gain +'+Math.round(g.reduce((a,b)=>a+(b.powerAfter-b.powerBefore),0)/g.length)+' kW':'';})()}</div>`:''}
+    `;
+  },
+  mount(root){
+    const s = this.state;
+    const q = U.el('#bq',root);
+    if(q) q.addEventListener('input',U.debounce(()=>{ s.q=q.value; Modules.repaintBuilds(); },220));
+    const nm = U.el('#bmake',root); if(nm) nm.addEventListener('change',()=>{ s.make=nm.value; Modules.repaintBuilds(); });
+    const ns = U.el('#bsort',root); if(ns) ns.addEventListener('change',()=>{ s.sort=ns.value; Modules.repaintBuilds(); });
+    U.on(root,'click','[data-tab]',(e,b)=>{ s.tab=b.dataset.tab; Router.refresh(); });
+    U.on(root,'click','[data-act="add"]',()=>Modules.buildForm(null));
+    U.on(root,'click','[data-act="export"]',()=>Modules.exportBuilds());
+    U.on(root,'click','[data-bact]',(e,b)=>Modules.buildAction(b.dataset.bact,b.dataset.id));
+    U.on(root,'click','[data-bopen]',(e,b)=>{
+      if(e.target.closest('[data-bact]')) return;
+      Modules.buildForm(b.dataset.bopen);
     });
   }
 });
@@ -3343,7 +3304,7 @@ Portal.register({
    MODULE: Gallery
    ================================================================== */
 Portal.register({
-  id:'gallery', title:'Gallery Manager', sub:'Photos shown on your gallery page', icon:'image', group:'Website', instant:true,
+  id:'gallery', title:'Gallery Manager', sub:'Photos shown on your gallery page', icon:'image', group:'Proof of work', instant:true,
   badge(st){ return st.gallery ? {text:String(st.gallery),mut:true} : null; },
   render(){
     return `
@@ -3382,7 +3343,7 @@ Portal.register({
    MODULE: Testimonials
    ================================================================== */
 Portal.register({
-  id:'testimonials', title:'Testimonials', sub:'Customer reviews on your website', icon:'star', group:'Website', instant:true,
+  id:'testimonials', title:'Testimonials', sub:'Customer reviews on your website', icon:'star', group:'Proof of work', instant:true,
   render(){
     const list = Store.list('testimonials');
     const avg = list.length ? (list.reduce((a,t)=>a+(t.rating||0),0)/list.length).toFixed(1) : '0.0';
