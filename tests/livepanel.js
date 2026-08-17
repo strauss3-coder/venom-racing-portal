@@ -47,7 +47,7 @@ function boot(handler){return new Promise(res=>{
   t('offers the fix',()=>{ if(!/Publish changes/.test(w.document.getElementById('view').textContent)) throw new Error('no publish button'); });
 
   console.log('\n=== FULLY PUBLISHED ===');
-  const full={website_services:20,website_stages:5,website_products:13,website_brands:22,website_faqs:9,website_builds:0,testimonials:11};
+  const full={website_services:20,website_stages:5,website_products:13,website_brands:22,website_faqs:9,testimonials:11};
   w=await boot((u)=>{
     const tb=String(u).split('/rest/v1/')[1];
     if(!tb) return ok({});
@@ -62,7 +62,7 @@ function boot(handler){return new Promise(res=>{
   t('names the live domain',()=>{ if(!/venomracing\.co\.za/.test(p.textContent)) throw new Error('domain missing'); });
   t('links to the live site',()=>{ const a=w.document.querySelector('#view a[href^="https://venomracing"]');
     if(!a) throw new Error('no link to the site'); });
-  t('builds row shows nothing yet',()=>{ if(!/Nothing added yet/.test(p.textContent)) throw new Error('builds row wrong'); });
+  t('no builds row',()=>{ if(/Proven results/.test(p.textContent)) throw new Error('builds row still present'); });
 
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);

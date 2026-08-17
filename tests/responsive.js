@@ -1,6 +1,6 @@
 const PATH_=require('path'),fs=require('fs');
 const PORTAL=process.env.PORTAL_DIR||PATH_.resolve(__dirname,'..');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const NARROWEST=320;
 let bad=0;
 const flag=(w,m)=>{ console.log('  ['+w+'] '+m); bad++; };

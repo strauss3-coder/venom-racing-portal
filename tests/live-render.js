@@ -1,5 +1,5 @@
 const PATH_=require('path'),fs=require('fs');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const {JSDOM}=require('jsdom');
 // Simulate the REAL live condition: database reachable but every table empty.
 function run(page){return new Promise(res=>{
@@ -42,8 +42,7 @@ function run(page){return new Promise(res=>{
     if(n<12) throw new Error('only '+n+' service cards');});
   t('stages still listed',()=>{const g=d.querySelector('[data-vr-stages]');
     if(!/Software Only/.test(g.textContent)) throw new Error('stages missing');});
-  t('proven results hidden (no builds)',()=>{const s=d.querySelector('[data-vr-results]');
-    if(!s.hasAttribute('hidden')) throw new Error('empty section exposed');});
+  t('no proven-results section',()=>{ if(d.querySelector('[data-vr-results]')) throw new Error('invented section still present'); });
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 })();

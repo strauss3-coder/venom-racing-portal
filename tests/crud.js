@@ -1,6 +1,6 @@
 const PATH_=require('path');
 const PORTAL=process.env.PORTAL_DIR||PATH_.resolve(__dirname,'..');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const fs=require('fs'); const {JSDOM}=require('jsdom');
 const html=fs.readFileSync(PATH_.join(PORTAL,'index.html'),'utf8');
 const errors=[];
@@ -27,68 +27,42 @@ setTimeout(()=>{
     });
   });
 
-  console.log('\n=== BUILD lifecycle ===');
-  const before = Store.list('builds').length;
-  check('insert build',()=>{
-    Store.insert('builds',{id:U.id('b'),title:'Test GTI Stage 2',make:'Volkswagen',model:'Golf 7 GTI',
-      year:2019,engine:'2.0 TSI',fuel:'Petrol',transmission:'DSG',stage:'Stage 2',tuningType:'ECU + TCU',
-      validation:'Dyno',powerBefore:169,powerAfter:224,torqueBefore:350,torqueAfter:450,
-      workDone:['Downpipe','Intake'],description:'x',images:[],customerRef:'',status:'published',
-      featured:true,published:true,archived:false,views:12,completedAt:Date.now()});
-    if(Store.list('builds').length!==before+1) throw new Error('not inserted');
+  console.log('\n=== SERVICE lifecycle ===');
+  const before = Store.list('services').length;
+  check('insert service',()=>{
+    Store.insert('services',{id:U.id('s'),title:'Test Service',division:'Performance',icon:'wrench',
+      description:'A test service.',image:'',anchor:'',active:true,featured:false});
+    if(Store.list('services').length!==before+1) throw new Error('not inserted');
   });
-  check('stats reflect gain',()=>{
-    const st=Store.stats();
-    if(st.published!==1) throw new Error('published='+st.published);
-    if(st.gainAvg!==55) throw new Error('gainAvg='+st.gainAvg+' expected 55');
-    if(st.bestGain!==55) throw new Error('bestGain='+st.bestGain);
-  });
-  const nb = Store.list('builds').find(b=>b.title==='Test GTI Stage 2');
-  check('filter: search',()=>{
-    const r=Modules.filterBuilds(Store.list('builds'),{q:'gti',tab:'all',make:'',sort:'newest'});
-    if(r.length!==1) throw new Error('got '+r.length);
-  });
-  check('filter: published tab',()=>{
-    const r=Modules.filterBuilds(Store.list('builds'),{q:'',tab:'published',make:'',sort:'gain-hi'});
-    if(r.length!==1) throw new Error('got '+r.length);
-  });
-  check('filter: stage sort',()=>{
-    Modules.filterBuilds(Store.list('builds'),{q:'',tab:'all',make:'',sort:'stage'});
-  });
-  check('buildCard renders',()=>{
-    const h=Modules.buildCard(nb);
-    if(!/\+55 kW/.test(h)) throw new Error('gain missing');
-    if(!/Stage 2/.test(h)) throw new Error('stage ribbon missing');
-    if(/undefined|NaN/.test(h)) throw new Error('bad token in card');
-  });
-  check('duplicate',()=>{ Modules.buildAction('dup',nb.id); if(Store.list('builds').length!==before+2) throw new Error('no copy'); });
-  check('archive',()=>{ Modules.buildAction('archive',nb.id); if(!Store.find('builds',nb.id).archived) throw new Error('not archived'); });
-  check('unarchive',()=>{ Modules.buildAction('unarchive',nb.id); if(Store.find('builds',nb.id).archived) throw new Error('still archived'); });
+  const ns = Store.list('services').find(x=>x.title==='Test Service');
+  check('update service',()=>{ Store.update('services',ns.id,{title:'Renamed Service'});
+    if(Store.find('services',ns.id).title!=='Renamed Service') throw new Error('not updated'); });
+  check('stats reflect it',()=>{ const st=Store.stats();
+    if(st.services!==before+1) throw new Error('services='+st.services); });
+  check('remove service',()=>{ Store.remove('services',ns.id);
+    if(Store.list('services').length!==before) throw new Error('not removed'); });
+  check('no builds module',()=>{ if(Portal.byId.builds) throw new Error('builds module still registered'); });
+  check('no offers module',()=>{ if(Portal.byId.offers) throw new Error('offers module still registered'); });
+  check('no analytics module',()=>{ if(Portal.byId.analytics) throw new Error('analytics module still registered'); });
 
   console.log('\n=== FORMS open without error ===');
-  ['buildForm','serviceForm','stageForm','productForm','brandForm','faqForm','enquiryForm','testimonialForm','offerForm'].forEach(f=>{
+  ['serviceForm','stageForm','productForm','brandForm','faqForm','enquiryForm','testimonialForm'].forEach(f=>{
     check(f+'(new)',()=>{ Modules[f](null); const mr=w.document.getElementById('modalRoot');
       if(!mr.innerHTML.trim()) throw new Error('modal did not open'); mr.innerHTML=''; });
   });
-  check('buildForm(edit)',()=>{ Modules.buildForm(nb.id);
-    const mr=w.document.getElementById('modalRoot');
-    if(!/Edit build/.test(mr.innerHTML)) throw new Error('not edit mode');
-    if(/undefined|NaN/.test(mr.innerHTML)) throw new Error('bad token in form');
-    mr.innerHTML=''; });
-
   console.log('\n=== CSV exports ===');
   // Seed one of each so the exports have real rows to serialise.
   Store.insert('enquiries',{id:U.id('e'),name:'CSV Test',phone:'082 000 0000',email:'csv@example.com',
     make:'Audi',model:'RS3',registration:'ABC123',service:'Dyno Tuning',vehicle:'Audi RS3',
     notes:'n',source:'Website form',status:'unread',message:'m'});
   const saved=[]; const origSave=U.save; U.save=(n,c)=>saved.push([n,c]);
-  ['exportBuilds','exportEnquiries','exportTestimonials'].forEach(f=>check(f,()=>{
+  ['exportEnquiries','exportTestimonials'].forEach(f=>check(f,()=>{
     Modules[f](); const last=saved[saved.length-1];
     if(!last||!last[1]||last[1].split('\n').length<2) throw new Error('empty csv');
     if(/undefined/.test(last[1])) throw new Error('undefined in csv');
   }));
   check('backup json',()=>{ Modules.exportAll(); const last=saved[saved.length-1];
-    const j=JSON.parse(last[1]); if(!j.builds||!j.services) throw new Error('missing collections'); });
+    const j=JSON.parse(last[1]); if(!j.services||!j.stages) throw new Error('missing collections'); });
   console.log('  files: '+saved.map(s=>s[0]).join(', '));
   U.save=origSave;
 

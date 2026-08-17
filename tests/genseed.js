@@ -1,6 +1,6 @@
 const PATH_=require('path');
 const PORTAL=process.env.PORTAL_DIR||PATH_.resolve(__dirname,'..');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const fs=require('fs'); const {JSDOM}=require('jsdom');
 const html=fs.readFileSync(PATH_.join(PORTAL,'index.html'),'utf8');
 const dom=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://x.io/',beforeParse(w){
@@ -19,7 +19,7 @@ setTimeout(()=>{
     return q(v);
   };
   const out=[];
-  const COLS=['builds','services','stages','products','brands','faqs','testimonials','offers'];
+  const COLS=['services','stages','products','brands','faqs','testimonials'];
   let total=0;
   COLS.forEach(key=>{
     const m=MAP[key], rows=Store.list(key).filter(r=>!r.demo);
@@ -34,7 +34,7 @@ setTimeout(()=>{
     total+=rows.length;
   });
   // settings documents
-  const settings=['homepage','contact','appearance','analytics','gallery','meta'];
+  const settings=['homepage','contact','appearance','gallery','meta'];
   out.push('insert into public.site_settings (key, value) values');
   out.push(settings.map(k=>'  ('+q(k)+', '+q(JSON.stringify(Cloud.settingsValue(k)))+'::jsonb)').join(',\n')+'');
   out.push('on conflict (key) do update set value = excluded.value, updated_at = now();');

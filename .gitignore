@@ -2,3 +2,8 @@
 .kombai/
 *.log
 tests/node_modules
+
+# The website is its own repository with its own remote and deploys to
+# venomracing.co.za. It lives here only so the portal's test suites can
+# drive the real files.
+venom-racing-website/

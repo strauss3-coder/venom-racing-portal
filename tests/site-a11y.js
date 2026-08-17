@@ -1,5 +1,5 @@
 const PATH_=require('path');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const fs=require('fs'),glob=fs.readdirSync(SITE).filter(f=>f.endsWith('.html'));
 const {JSDOM}=require('jsdom');
 let bad=0; const add=(p,k,d)=>{ console.log('  '+p.padEnd(18)+k+'  '+d); bad++; };

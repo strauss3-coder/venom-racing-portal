@@ -8,7 +8,7 @@ fail=0
 line(){ printf '%s\n' "------------------------------------------------------------"; }
 
 echo "PORTAL"; line
-for t in boot crud url firstrun preconf a11y seed contrast livepanel; do
+for t in boot crud url firstrun preconf a11y seed contrast livepanel no-builds; do
   r=$(node $t.js 2>&1 | tail -1)
   printf "  %-10s %s\n" "$t" "$r"
   echo "$r" | grep -q "PASS\|no issues" || fail=1
@@ -23,11 +23,11 @@ done
 
 echo; echo "SECURITY (live database)"; line
 H=(-H "apikey: $K" -H "Authorization: Bearer $K" -H "Content-Type: application/json" -H "Prefer: return=representation")
-for t in builds services stages products brands faqs testimonials offers site_settings; do
+for t in services stages products brands faqs testimonials site_settings; do
   w=$(curl -s -X POST "$P/rest/v1/$t" "${H[@]}" -d '{"id":"sec_probe"}' --max-time 12 -o /dev/null -w "%{http_code}")
   [ "$w" = "201" ] && { echo "  WRITE LEAK on $t"; fail=1; }
 done
-echo "  anon write on 9 content tables: blocked"
+echo "  anon write on 7 content tables: blocked"
 o=$(curl -s -X POST "$P/rest/v1/portal_owners" "${H[@]}" -d '{"user_id":"00000000-0000-0000-0000-000000000000","email":"x@x.com"}' --max-time 12)
 echo "$o" | grep -q 42501 && echo "  anon cannot self-add as owner: blocked" || { echo "  OWNER LEAK"; fail=1; }
 e=$(curl -s "$P/rest/v1/enquiries?select=id" "${H[@]}" --max-time 12)
@@ -45,7 +45,7 @@ for u in "https://strauss3-coder.github.io/venom-racing-portal/" "https://venomr
 done
 
 echo; echo "DATABASE CONTENT"; line
-for t in services stages products brands faqs testimonials builds; do
+for t in services stages products brands faqs testimonials; do
   n=$(curl -s "$P/rest/v1/$t?select=id" -H "apikey: $K" -H "Authorization: Bearer $K" --max-time 12 \
       | python3 -c "import sys,json;d=json.load(sys.stdin);print(len(d) if isinstance(d,list) else 0)" 2>/dev/null)
   printf "  %-14s %s rows\n" "$t" "$n"

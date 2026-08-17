@@ -459,8 +459,6 @@ img{max-width:100%;display:block}
   animation:fadeUp .5s var(--ease-out) both;
 }
 .veh:hover{transform:translateY(-5px);box-shadow:var(--sh-4);border-color:rgba(224,30,46,.32)}
-/* Applied to archived builds. */
-.veh.sold{opacity:.72}
 .veh-img{position:relative;aspect-ratio:16/10;background:linear-gradient(145deg,#1A1F29,#0E1117);overflow:hidden}
 .veh-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease)}
 .veh:hover .veh-img img{transform:scale(1.07)}
@@ -961,7 +959,7 @@ table.tbl .mut{color:var(--text-3);font-size:12px}
       <div class="tb-right">
         <label class="tb-search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;color:var(--text-3);flex-shrink:0"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-          <input id="globalSearch" placeholder="Search builds, enquiries..." aria-label="Global search">
+          <input id="globalSearch" placeholder="Search services, enquiries..." aria-label="Global search">
           <kbd>/</kbd>
         </label>
         <button class="icon-btn" id="btnBell" title="Notifications" aria-label="Notifications">
@@ -1046,8 +1044,6 @@ const BUSINESS = {
     logo:'', favicon:''
   },
 
-  /* The primary business module is Performance Builds. */
-  terms:{ item:'build', items:'builds', Item:'Build', Items:'Builds', price:'Build cost', listing:'build' },
 
   /* Controlled dropdowns. Vehicle makes are the ones the site's own
      gallery, reviews and service videos actually name; stages and
@@ -1070,7 +1066,7 @@ const BUSINESS = {
     enquiryStatuses:['unread','contacted','quoted','booked','completed']
   },
 
-  buckets:{ primary:'build-images', gallery:'gallery', branding:'branding' },
+  buckets:{ gallery:'gallery', branding:'branding' },
 
   contact:{
     phone:'082 852 0680',
@@ -1335,29 +1331,6 @@ const MS  = v  => v ? new Date(v).getTime() : null;
 
 /* Column mapping between portal records and database rows. */
 const MAP = {
-  /* Primary business module. Modelled on the reference vehicles entry:
-     same {table, bucket, to, from} shape, tuning-workshop columns. */
-  builds:{
-    table:'builds', bucket:BUSINESS.buckets.primary,
-    to:(b,i)=>({ id:b.id, title:b.title||'', make:b.make||'', model:b.model||'', year:Number(b.year)||null,
-      engine:b.engine||'', fuel:b.fuel||'', transmission:b.transmission||'',
-      stage:b.stage||'', tuning_type:b.tuningType||'', validation:b.validation||'',
-      power_before:Number(b.powerBefore)||0, power_after:Number(b.powerAfter)||0,
-      torque_before:Number(b.torqueBefore)||0, torque_after:Number(b.torqueAfter)||0,
-      work_done:b.workDone||[], description:b.description||'', images:b.images||[],
-      customer_ref:b.customerRef||'', status:b.status||'published',
-      featured:!!b.featured, published:!!b.published, archived:!!b.archived,
-      views:Number(b.views)||0, completed_at:b.completedAt?ISO(b.completedAt):null, sort_order:i||0,
-      created_at:ISO(b.createdAt), updated_at:ISO(b.updatedAt) }),
-    from:r=>({ id:r.id, title:r.title, make:r.make, model:r.model, year:r.year, engine:r.engine,
-      fuel:r.fuel, transmission:r.transmission, stage:r.stage, tuningType:r.tuning_type,
-      validation:r.validation, powerBefore:Number(r.power_before), powerAfter:Number(r.power_after),
-      torqueBefore:Number(r.torque_before), torqueAfter:Number(r.torque_after),
-      workDone:r.work_done||[], description:r.description, images:r.images||[],
-      customerRef:r.customer_ref, status:r.status, featured:r.featured, published:r.published,
-      archived:r.archived, views:r.views, completedAt:MS(r.completed_at),
-      createdAt:MS(r.created_at), updatedAt:MS(r.updated_at) })
-  },
   /* The service menu behind performance.html and services.html. */
   services:{
     table:'services', bucket:BUSINESS.buckets.branding,
@@ -1420,15 +1393,6 @@ const MAP = {
       photo:r.photo, featured:r.featured, source:r.source||'Google', dateText:r.date_text,
       createdAt:MS(r.created_at), updatedAt:MS(r.updated_at) })
   },
-  offers:{
-    table:'offers', bucket:BUSINESS.buckets.branding,
-    to:(o,i)=>({ id:o.id, title:o.title||'', description:o.description||'', btn_text:o.btnText||'',
-      btn_link:o.btnLink||'', colour:o.colour||BUSINESS.brand.accent, image:o.image||'', active:!!o.active,
-      expiry:o.expiry?ISO(o.expiry):null, sort_order:i||0, created_at:ISO(o.createdAt), updated_at:ISO(o.updatedAt) }),
-    from:r=>({ id:r.id, title:r.title, description:r.description, btnText:r.btn_text, btnLink:r.btn_link,
-      colour:r.colour, image:r.image, active:r.active, expiry:MS(r.expiry),
-      createdAt:MS(r.created_at), updatedAt:MS(r.updated_at) })
-  },
   /* Columns match the website's own contact form fields exactly, so
      forms.js can insert a row with no translation layer. */
   enquiries:{
@@ -1451,7 +1415,7 @@ const MAP = {
 };
 
 /* Settings documents stored one row each in site_settings. */
-const SETTINGS_KEYS = ['homepage','contact','appearance','analytics','gallery','meta'];
+const SETTINGS_KEYS = ['homepage','contact','appearance','gallery','meta'];
 
 /* Your project, pre-filled on the Database page so there is nothing to type.
    Both values are safe to keep in this file. The publishable key is designed
@@ -1716,7 +1680,7 @@ const Cloud = {
     opts = opts||{};
     this.setStatus('syncing');
     const settings = await this.selectAll('site_settings');
-    const probe = await this.selectAll('builds','created_at.desc');
+    const probe = await this.selectAll('services','created_at.desc');
 
     /* Nothing came back. That has two very different causes and the portal
        must not guess: either the project really is empty, or this account
@@ -1735,7 +1699,7 @@ const Cloud = {
       else if(row.key==='meta') Object.assign(next.meta,row.value||{});
       else if(next[row.key]) next[row.key] = Store._merge(next[row.key],row.value||{});
     });
-    for(const key of ['builds','services','stages','products','brands','faqs','testimonials','offers','enquiries','activity']){
+    for(const key of ['services','stages','products','brands','faqs','testimonials','enquiries','activity']){
       const m = MAP[key];
       const order = key==='activity' ? 'at.desc'
                   : key==='enquiries' ? 'created_at.desc'
@@ -1756,8 +1720,7 @@ const Cloud = {
   async liveCounts(){
     const map = {
       services:'website_services', stages:'website_stages', products:'website_products',
-      brands:'website_brands', faqs:'website_faqs', builds:'website_builds',
-      testimonials:'testimonials'
+      brands:'website_brands', faqs:'website_faqs', testimonials:'testimonials'
     };
     const keys = Object.keys(map);
     const rows = await Promise.all(keys.map(k=>this.selectAll(map[k]).catch(()=>null)));
@@ -1787,13 +1750,13 @@ const Cloud = {
       if(owner !== true) return { skipped:'not-owner', owner };
 
       const probes = await Promise.all(
-        ['services','stages','products','brands','faqs','testimonials','builds']
+        ['services','stages','products','brands','faqs','testimonials']
           .map(t=>this.selectAll(t).catch(()=>null))
       );
       const remoteRows = probes.reduce((n,r)=>n+((r&&r.length)||0),0);
       if(remoteRows > 0) return { skipped:'remote-has-content', remoteRows };
 
-      const localRows = ['services','stages','products','brands','faqs','testimonials','builds','offers']
+      const localRows = ['services','stages','products','brands','faqs','testimonials']
         .reduce((n,k)=>n+Store.list(k).filter(r=>!r.demo).length,0);
       if(!localRows) return { skipped:'nothing-local' };
 
@@ -1812,8 +1775,8 @@ const Cloud = {
     opts = opts||{};
     this.setStatus('syncing');
     const skipDemo = opts.includeSamples !== true;
-    const counts = { builds:0, services:0, stages:0, products:0, brands:0, faqs:0, testimonials:0, offers:0, enquiries:0 };
-    for(const key of ['builds','services','stages','products','brands','faqs','testimonials','offers','enquiries']){
+    const counts = { services:0, stages:0, products:0, brands:0, faqs:0, testimonials:0, enquiries:0 };
+    for(const key of ['services','stages','products','brands','faqs','testimonials','enquiries']){
       const m = MAP[key];
       const list = Store.list(key).filter(r=>!(skipDemo && r.demo));
       counts[key] = list.length;
@@ -1840,7 +1803,7 @@ const Assets = {
     if(!Cloud.on || !Cloud.authed) return dataUrl;
     if(typeof dataUrl!=='string' || dataUrl.indexOf('data:')!==0) return dataUrl;
     try{
-      return await Cloud.uploadImage(bucket||BUSINESS.buckets.primary,dataUrl);
+      return await Cloud.uploadImage(bucket||BUSINESS.buckets.branding,dataUrl);
     }catch(err){
       UI.toast('warn','Photo saved on this device only',err.message);
       return dataUrl;
@@ -1853,11 +1816,6 @@ const Assets = {
    ================================================================== */
 const SEED = () => ({
   meta:{ version:1, createdAt:Date.now(), lastSaved:Date.now(), siteLive:true },
-
-  /* Performance Builds. Proof of completed work that supports the
-     Performance page - not the centrepiece of the site. Starts empty:
-     the owner logs real jobs, and nothing is invented here. */
-  builds:[],
 
   /* The service menu, taken verbatim from performance.html and
      services.html. All real - edit the copy here and it changes once. */
@@ -2016,9 +1974,6 @@ const SEED = () => ({
     btn1Text:BUSINESS.copy.btn1Text, btn1Link:BUSINESS.copy.btn1Link,
     btn2Text:BUSINESS.copy.btn2Text, btn2Link:BUSINESS.copy.btn2Link,
     heroImage:'',
-    featuredIds:[],
-    featuredTitle:'Featured builds',
-    featuredSub:'A selection of recent work from the Venom Racing workshop.',
     aboutTitle:BUSINESS.copy.aboutTitle,
     aboutText:BUSINESS.copy.aboutText,
     aboutImage:'',
@@ -2032,7 +1987,6 @@ const SEED = () => ({
     ctaTitle:BUSINESS.copy.ctaTitle,
     ctaText:BUSINESS.copy.ctaText,
     ctaBtnText:BUSINESS.copy.ctaBtnText, ctaBtnLink:BUSINESS.copy.ctaBtnLink,
-    banners:[]
   },
 
   gallery:[],
@@ -2064,10 +2018,6 @@ const SEED = () => ({
     { id:'t_dj-slash-productions-sa', name:'DJ Slash Productions SA', subject:'Ford Focus ST225 repairs and fabrication', rating:5, photo:'', source:'Google', dateText:'a year ago', featured:true,
       review:"Yet again, Dricus and the team have outdone themselves. I can't thank you enough for treating my pride and joy as if it was my own. My Focus 225ST had a bad coolant leak, which they found by the Welsh plugs. They went further to find the coil pack wires were damaged and the intake pipe had issues, and sorted some leaks. On top of that they did a Y-piece straight pipe. One can see why this is a 5-star, RMI-Approved workshop. Keep up the good work - see you again soon!", createdAt:Date.now() }
   ],
-
-  /* The website advertises no promotions, so none are invented here.
-     Add one on the Promotions page and it appears on the site. */
-  offers:[],
 
   contact:{
     phone:BUSINESS.contact.phone,
@@ -2110,17 +2060,6 @@ const SEED = () => ({
     tagline:BUSINESS.brand.tagline
   },
 
-  /* Starts empty. The reference portal shipped invented traffic figures;
-     inventing numbers for a real business is worse than showing none, so
-     the Analytics page shows an honest empty state until real figures
-     are entered or an analytics source is connected. */
-  analytics:{
-    visitors7:[0,0,0,0,0,0,0],
-    visitors30Total:0, visitorsPrev:0,
-    whatsappClicks:0, phoneCalls:0, formSubmits:0, buildViews:0,
-    devices:{ Mobile:0, Desktop:0, Tablet:0 },
-    sources:{}
-  },
   activity:[],
   notifications:[]
 });
@@ -2262,23 +2201,7 @@ const Store = {
   },
 
   stats(){
-    const all = this.list('builds');
-    const b = all.filter(x=>!x.archived);
-    const pub = b.filter(x=>x.published);
-    /* Average power gain across builds that actually carry both figures,
-       so a half-filled record cannot drag the average to nonsense. */
-    const gained = pub.filter(x=>Number(x.powerAfter)>0 && Number(x.powerBefore)>0);
-    const gainAvg = gained.length
-      ? Math.round(gained.reduce((s,x)=>s+(Number(x.powerAfter)-Number(x.powerBefore)),0)/gained.length)
-      : 0;
     return {
-      total:b.length,
-      published:pub.length,
-      drafts:b.filter(x=>!x.published).length,
-      featured:b.filter(x=>x.featured && x.published).length,
-      archived:all.filter(x=>x.archived).length,
-      gainAvg:gainAvg,
-      bestGain:gained.length ? Math.max.apply(null,gained.map(x=>Number(x.powerAfter)-Number(x.powerBefore))) : 0,
       services:this.list('services').filter(s=>s.active).length,
       stages:this.list('stages').filter(s=>s.active).length,
       products:this.list('products').filter(p=>p.active).length,
@@ -2286,11 +2209,8 @@ const Store = {
       faqs:this.list('faqs').filter(f=>f.active).length,
       gallery:this.list('gallery').length,
       testimonials:this.list('testimonials').length,
-      offersOn:this.list('offers').filter(o=>o.active).length,
       unread:this.list('enquiries').filter(e=>e.status==='unread').length,
-      enquiries:this.list('enquiries').length,
-      whatsapp:this.data.analytics.whatsappClicks,
-      views:b.reduce((s,x)=>s+(Number(x.views)||0),0)
+      enquiries:this.list('enquiries').length
     };
   }
 };
@@ -2716,10 +2636,8 @@ Portal.register({
   id:'dashboard', title:'Dashboard', sub:'Overview of your website', icon:'dash', group:'Overview', skeleton:'stats',
   render(){
     const st = Store.stats();
-    const a = Store.data.analytics;
     const live = Store.data.meta.siteLive;
     const recent = (Store.data.activity||[]).slice(0,7);
-    const topBuilds = Store.list('builds').filter(b=>!b.archived).sort((x,y)=>(y.views||0)-(x.views||0)).slice(0,5);
 
     return `
     ${H.head('Good day, welcome back','Here is how the '+BUSINESS.name+' website is performing right now.',`
@@ -2730,9 +2648,9 @@ Portal.register({
       ${H.stat({label:'Website status',value:live?'Live':'Offline',icon:'globe',tone:live?'ok':'dan',sub:live?'<span class="trend up">All systems normal</span>':'<span class="trend down">Visitors see a notice</span>'})}
       ${H.stat({label:'Services live',count:st.services,icon:'wrench',sub:`<span>${st.products} products · ${st.brands} brands</span>`})}
       ${H.stat({label:'Performance stages',count:st.stages,icon:'stage',tone:'vio',sub:'<span>Shown on your Performance page</span>'})}
-      ${H.stat({label:'Average power gain',value:st.gainAvg?('+'+st.gainAvg+' kW'):'Not set',icon:'dyno',tone:st.gainAvg?'ok':'',sub:st.bestGain?`<span>Best so far +${st.bestGain} kW</span>`:'<span>Add dyno figures to a build</span>'})}
+      ${H.stat({label:'FAQs published',count:st.faqs,icon:'question',tone:'ok',sub:'<span>On your FAQs page</span>'})}
       ${H.stat({label:'Unread enquiries',count:st.unread,icon:'inbox',tone:st.unread?'dan':'ok',sub:`<span>${st.enquiries} enquiries in total</span>`})}
-      ${H.stat({label:'Builds logged',count:st.published,icon:'image',sub:`<span>${st.drafts} draft${st.drafts===1?'':'s'} · proof of work</span>`})}
+      ${H.stat({label:'Gallery images',count:st.gallery,icon:'image',sub:`<span>${st.testimonials} reviews published</span>`})}
     </div>
 
     ${H.card('Your live website','What visitors can see right now at '+DOMAIN,`
@@ -2751,7 +2669,6 @@ Portal.register({
           <button class="qa" data-go="stages"><span class="qa-ic">${ICON.stage}</span><b>Performance stages</b><small>${st.stages} stages</small></button>
           <button class="qa" data-go="enquiries"><span class="qa-ic">${ICON.inbox}</span><b>View enquiries</b><small>${st.unread} unread</small></button>
           <button class="qa" data-go="products"><span class="qa-ic">${ICON.additive}</span><b>Products &amp; brands</b><small>${st.products} products</small></button>
-          <button class="qa" data-act="addbuild"><span class="qa-ic">${ICON.plus}</span><b>Add a build</b><small>Log a completed job</small></button>
           <button class="qa" data-go="gallery"><span class="qa-ic">${ICON.image}</span><b>Manage gallery</b><small>${st.gallery} images</small></button>
           <button class="qa" data-go="testimonials"><span class="qa-ic">${ICON.star}</span><b>Reviews</b><small>${st.testimonials} published</small></button>
           <button class="qa" data-act="backup"><span class="qa-ic">${ICON.download}</span><b>Download backup</b><small>Save everything</small></button>
@@ -2761,7 +2678,7 @@ Portal.register({
           ${[
             {l:'Services with a description',n:Store.list('services').filter(x=>x.active&&x.description).length,d:Math.max(st.services,1),tone:''},
             {l:'Stages fully written up',n:Store.list('stages').filter(x=>x.active&&(x.requirements||[]).length).length,d:Math.max(st.stages,1),tone:'ok'},
-            {l:'Builds with dyno figures',n:Store.list('builds').filter(b=>!b.archived&&Number(b.powerAfter)>0).length,d:Math.max(st.total,1),tone:'vio'},
+            {l:'Products listed',n:st.products,d:Math.max(st.products,1),tone:'vio'},
             {l:'FAQs published',n:st.faqs,d:9,tone:'warn'}
           ].map(r=>{
             const pct = Math.min(100,Math.round((r.n/r.d)*100));
@@ -2773,7 +2690,6 @@ Portal.register({
           <div class="sep" style="margin:2px 0"></div>
           <div class="kv">
             <div class="kv-row"><span>Preferred brands listed</span><b>${U.num(st.brands)}</b></div>
-            <div class="kv-row"><span>Total build views</span><b>${U.num(st.views)}</b></div>
             <div class="kv-row"><span>Last saved</span><b>${U.ago(Store.data.meta.lastSaved)}</b></div>
           </div>
         </div>`)}
@@ -2795,14 +2711,6 @@ Portal.register({
           : H.empty('inbox','No enquiries this week','New leads from your website land here the moment a visitor sends the form.'),
           ser.total ? `<span class="chip acc">${ICON.trend} ${ser.total} in the last 7 days</span>` : '');
       })()}
-      ${H.card('Most viewed builds','What visitors are looking at',
-        topBuilds.length ? `<div class="rank">${topBuilds.map((b,i)=>{
-          const max = topBuilds[0].views||1;
-          return `<div class="rank-row">
-            <div class="rank-top"><span class="rank-n">${i+1}</span><b>${U.esc(b.title)}</b><span>${U.num(b.views||0)} views</span></div>
-            <div class="meter"><i data-w="${Math.round(((b.views||0)/max)*100)}%"></i></div>
-          </div>`;
-        }).join('')}</div>` : H.empty('stage','No builds yet','Add your first build to start tracking views.'))}
     </div>
 
     ${H.card('Recent activity','Everything that has changed in your portal',
@@ -2819,7 +2727,6 @@ Portal.register({
   mount(root){
     Modules.paintLivePanel();
     U.on(root,'click','[data-go]',(e,b)=>location.hash='#/'+b.dataset.go);
-    U.on(root,'click','[data-act="addbuild"]',()=>Modules.buildForm(null));
     U.on(root,'click','[data-act="publish"]',()=>Modules.publishNow());
     U.on(root,'click','[data-act="refresh"]',()=>{ Router.refresh(); UI.toast('info','Refreshed','Showing the latest numbers'); });
     U.on(root,'click','[data-act="backup"]',()=>Modules.exportAll());
@@ -2905,7 +2812,7 @@ Portal.register({
   render(){
     const list = Store.list('stages');
     return `
-    ${H.head('Performance Stages','The stage ladder shown on your homepage. Each stage builds on the one before it.',
+    ${H.head('Performance Stages','The stage ladder shown on your Performance page. Each stage adds to the one before it.',
       `<button class="btn btn-pri" data-act="add">${ICON.plus} Add stage</button>`)}
     ${list.length ? `<div class="grid g2" style="align-items:start" data-srt>${list.map(x=>`
       <div class="card lift" data-id="${x.id}">
@@ -3062,81 +2969,6 @@ Portal.register({
 });
 
 /* ==================================================================
-   MODULE: Performance Builds  (primary business module)
-
-   Modelled directly on the reference vehicles module: filter bar with
-   search / make / sort, segmented tabs with live counts, responsive
-   card grid, tabbed editor modal, and a more-actions menu carrying
-   duplicate, archive and delete.
-   ================================================================== */
-Portal.register({
-  id:'builds', title:'Performance Builds', sub:'Proof of work supporting your Performance page', icon:'dyno', group:'Proof of work', skeleton:'cards',
-  badge(st){ return st.published ? {text:String(st.published),mut:true} : null; },
-  state:{ q:'', tab:'all', make:'', sort:'newest' },
-  render(params){
-    if(params.q!=null && params.q!=='') this.state.q = params.q;
-    const s = this.state;
-    const all = Store.list('builds');
-    const counts = {
-      all:all.filter(b=>!b.archived).length,
-      published:all.filter(b=>!b.archived&&b.published).length,
-      drafts:all.filter(b=>!b.archived&&!b.published).length,
-      featured:all.filter(b=>!b.archived&&b.featured).length,
-      archived:all.filter(b=>b.archived).length
-    };
-    const makes = Array.from(new Set(all.map(b=>b.make).filter(Boolean))).sort();
-    const list = Modules.filterBuilds(all,s);
-
-    return `
-    ${H.head('Performance Builds','Completed jobs that prove the work on your Performance page. Log the dyno figures and photos for each one.',`
-      <button class="btn" data-act="export">${ICON.download} Export CSV</button>
-      <button class="btn btn-pri" data-act="add">${ICON.plus} Add build</button>`)}
-
-    <div class="filters">
-      <label class="search">${ICON.search}
-        <input id="bq" placeholder="Search by title, make, model, stage or engine" value="${U.esc(s.q)}">
-      </label>
-      <select class="sel" id="bmake" aria-label="Filter builds by vehicle make">
-        <option value="">All makes</option>
-        ${makes.map(m=>`<option value="${U.esc(m)}" ${m===s.make?'selected':''}>${U.esc(m)}</option>`).join('')}
-      </select>
-      <select class="sel" id="bsort" aria-label="Sort builds">
-        ${[['newest','Newest first'],['oldest','Oldest first'],['gain-hi','Biggest power gain'],['power-hi','Highest final power'],['stage','Stage order'],['views','Most viewed'],['name','Title A to Z']]
-          .map(o=>`<option value="${o[0]}" ${s.sort===o[0]?'selected':''}>${o[1]}</option>`).join('')}
-      </select>
-    </div>
-
-    <div class="segbar" style="margin-bottom:18px">
-      ${[['all','All builds'],['published','Published'],['drafts','Drafts'],['featured','Featured'],['archived','Archived']]
-        .map(t=>`<button data-tab="${t[0]}" class="${s.tab===t[0]?'on':''}">${t[1]}<span class="n">${counts[t[0]]}</span></button>`).join('')}
-    </div>
-
-    ${list.length ? `<div class="veh-grid">${list.map(Modules.buildCard).join('')}</div>`
-      : H.empty('stage', s.q||s.make ? 'No builds match your search' : 'No builds in this list yet',
-          s.q||s.make ? 'Try a different search term or clear your filters.' : 'Add your first build and it will appear on your website as soon as you publish it.',
-          `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add build</button>`)}
-
-    ${list.length?`<div style="margin-top:20px;text-align:center;color:var(--text-3);font-size:12.5px">Showing ${list.length} of ${counts.all} builds${(()=>{const g=list.filter(b=>Number(b.powerAfter)>0&&Number(b.powerBefore)>0);return g.length?' · Average gain +'+Math.round(g.reduce((a,b)=>a+(b.powerAfter-b.powerBefore),0)/g.length)+' kW':'';})()}</div>`:''}
-    `;
-  },
-  mount(root){
-    const s = this.state;
-    const q = U.el('#bq',root);
-    if(q) q.addEventListener('input',U.debounce(()=>{ s.q=q.value; Modules.repaintBuilds(); },220));
-    const nm = U.el('#bmake',root); if(nm) nm.addEventListener('change',()=>{ s.make=nm.value; Modules.repaintBuilds(); });
-    const ns = U.el('#bsort',root); if(ns) ns.addEventListener('change',()=>{ s.sort=ns.value; Modules.repaintBuilds(); });
-    U.on(root,'click','[data-tab]',(e,b)=>{ s.tab=b.dataset.tab; Router.refresh(); });
-    U.on(root,'click','[data-act="add"]',()=>Modules.buildForm(null));
-    U.on(root,'click','[data-act="export"]',()=>Modules.exportBuilds());
-    U.on(root,'click','[data-bact]',(e,b)=>Modules.buildAction(b.dataset.bact,b.dataset.id));
-    U.on(root,'click','[data-bopen]',(e,b)=>{
-      if(e.target.closest('[data-bact]')) return;
-      Modules.buildForm(b.dataset.bopen);
-    });
-  }
-});
-
-/* ==================================================================
    MODULE: FAQs
    ================================================================== */
 Portal.register({
@@ -3194,7 +3026,7 @@ Portal.register({
   tab:'hero',
   render(){
     const h = Store.data.homepage;
-    const tabs = [['hero','Hero section'],['featured','Featured cars'],['banners','Banner images'],['about','About preview'],['stats','Statistics'],['cta','Call to action']];
+    const tabs = [['hero','Hero section'],['about','About preview'],['cta','Call to action']];
     return `
     ${H.head('Homepage Editor','Change the words and images visitors see first. Everything saves as you type.',
       `<button class="btn" data-act="preview">${ICON.eye} Preview hero</button>`)}
@@ -3251,58 +3083,6 @@ Portal.register({
       U.els('[data-k]',host).forEach(el=>el.addEventListener('input',()=>this.previewHero(host)));
     }
 
-    if(this.tab==='featured'){
-      const avail = Store.list('builds').filter(v=>!v.archived&&v.published);
-      const featured = avail.filter(v=>v.featured);
-      host.innerHTML = `
-        ${H.card('Featured section heading','Text above your featured cars',`
-          <div class="grid g2">
-            ${H.field('Section title',H.input('featuredTitle',h.featuredTitle,'Featured builds'))}
-            ${H.field('Section subtitle',H.input('featuredSub',h.featuredSub,'A selection of recent work from the workshop'))}
-          </div>`)}
-        <div style="height:14px"></div>
-        ${H.card('Choose featured builds','Tick the builds that should appear on your homepage. Drag to change their order.',
-          avail.length ? `<div id="featList">${featured.map(v=>Modules.sortRow(v)).join('')}</div>
-            ${featured.length?'<div class="sep"></div>':''}
-            <div class="grid" style="gap:8px">
-              ${avail.filter(v=>!v.featured).map(v=>`
-                <div class="toggle-card">
-                  ${v.images[0]?`<img class="mini-th" src="${v.images[0]}" alt="">`:`<div class="li-ic">${ICON.car}</div>`}
-                  <div style="min-width:0">
-                    <b style="font-size:13px">${U.esc(v.name)}</b>
-                    <small style="display:block;font-size:11.5px;color:var(--text-3)">${v.year} · ${U.money(v.price)}${v.sold?' · Sold':''}</small>
-                  </div>
-                  <label class="switch"><input type="checkbox" data-feat="${v.id}"><span class="track"></span></label>
-                </div>`).join('')}
-            </div>
-            ${featured.length===0?`<div class="note" style="margin-top:14px">${ICON.info}<div>No featured builds selected yet. Turn on a few builds above and they will show on your homepage.</div></div>`:''}`
-          : H.empty('stage','No published builds to feature','Add and publish a build first, then choose which ones to feature here.'))}`;
-      bindAll();
-      const fl = U.el('#featList',host);
-      if(fl) UI.sortable(fl,'.sortrow',ids=>{
-        const map = {}; Store.list('builds').forEach(v=>map[v.id]=v);
-        const rest = Store.list('builds').filter(v=>ids.indexOf(v.id)<0);
-        Store.data.builds = ids.map(id=>map[id]).filter(Boolean).concat(rest);
-        Store.persist(); UI.toast('ok','Order updated','Featured builds reordered');
-      });
-      U.on(host,'change','[data-feat]',(e,cb)=>{
-        Store.update('builds',cb.dataset.feat,{featured:cb.checked});
-        Store.log('Featured builds changed',(Store.find('builds',cb.dataset.feat)||{}).title+(cb.checked?' added to':' removed from')+' the homepage','star');
-        Store.persist(true); this.paint(root);
-      });
-      U.on(host,'click','[data-unfeat]',(e,b)=>{
-        Store.update('builds',b.dataset.unfeat,{featured:false});
-        this.paint(root); UI.toast('info','Removed from featured','');
-      });
-    }
-
-    if(this.tab==='banners'){
-      host.innerHTML = H.card('Homepage banner images','Wide images used across your homepage sections. Up to 5.','<div id="bnrUp"></div>');
-      UI.uploader(U.el('#bnrUp',host),{ max:5, images:h.banners||[], bucket:BUSINESS.buckets.branding, label:'Drop banner images here or tap to browse',
-        hint:'Wide landscape images work best.',
-        onChange:v=>{ h.banners=v; save(); Store.log('Banners updated',v.length+' banner images on the homepage','image'); } });
-    }
-
     if(this.tab==='about'){
       host.innerHTML = `
         <div class="grid g2" style="align-items:start">
@@ -3315,26 +3095,6 @@ Portal.register({
         </div>`;
       bindAll();
       UI.imagePicker(U.el('#aboutImg',host),{ value:h.aboutImage, label:'Upload about image', h:150, onChange:v=>{h.aboutImage=v;save();} });
-    }
-
-    if(this.tab==='stats'){
-      host.innerHTML = H.card('Homepage statistics','The four numbers shown as proof on your homepage',`
-        <div class="grid g2">
-          ${h.stats.map((s,i)=>`
-            <div class="card" style="box-shadow:none;background:var(--glass)">
-              <div class="card-b">
-                <div class="grid" style="gap:11px">
-                  ${H.field('Number '+(i+1),`<input class="inp" data-si="${i}" data-sk="value" value="${U.esc(s.value)}" placeholder="850+">`)}
-                  ${H.field('Label',`<input class="inp" data-si="${i}" data-sk="label" value="${U.esc(s.label)}" placeholder="Years of experience">`)}
-                </div>
-              </div>
-            </div>`).join('')}
-        </div>
-        <div class="note" style="margin-top:16px">${ICON.info}<div>Use short values such as 850+, 12 or 4.9. These appear as animated counters on your website.</div></div>`);
-      const push = U.debounce(()=>{ save(); },400);
-      U.els('[data-si]',host).forEach(el=>el.addEventListener('input',()=>{
-        h.stats[Number(el.dataset.si)][el.dataset.sk] = el.value; push();
-      }));
     }
 
     if(this.tab==='cta'){
@@ -3477,73 +3237,6 @@ Portal.register({
           Store.remove('testimonials',t.id);
           Store.log('Testimonial deleted','Review from '+t.name+' was removed','trash','dan');
           Router.refresh(); UI.toast('ok','Testimonial deleted','');
-        }
-      }
-    });
-  }
-});
-
-/* ==================================================================
-   MODULE: Special offers
-   ================================================================== */
-Portal.register({
-  id:'offers', title:'Special Offers', sub:'Promotional banners', icon:'tag', group:'Website', instant:true,
-  badge(st){ return st.offersOn ? {text:String(st.offersOn)} : null; },
-  render(){
-    const list = Store.list('offers');
-    return `
-    ${H.head('Special Offers','Create promotional banners for finance deals, trade-in bonuses and monthly specials.',
-      `<button class="btn btn-pri" data-act="add">${ICON.plus} Create offer</button>`)}
-    ${list.length ? `<div class="grid g2" style="align-items:start">${list.map(o=>{
-      const expired = o.expiry && o.expiry < Date.now();
-      const days = o.expiry ? Math.ceil((o.expiry-Date.now())/86400000) : null;
-      return `<div class="card lift" data-id="${o.id}">
-        <div class="card-b">
-          <div class="offer-prev" style="background:linear-gradient(140deg,${o.colour}, ${o.colour}22);${o.active&&!expired?'':'filter:grayscale(.7);opacity:.75'}">
-            ${o.image?`<div class="bgimg" style="background-image:url('${o.image}')"></div>`:''}
-            <h4>${U.esc(o.title)}</h4>
-            <p>${U.esc(o.description)}</p>
-            ${o.btnText?`<span class="btn btn-sm" style="background:#fff;color:#111;border-color:transparent;font-weight:700">${U.esc(o.btnText)}</span>`:''}
-          </div>
-          <div class="row" style="margin-top:14px">
-            <span class="chip ${expired?'dan':o.active?'ok':''}"><i></i>${expired?'Expired':o.active?'Live on website':'Switched off'}</span>
-            ${o.demo?`<span class="chip dan">Sample</span>`:''}
-            ${o.expiry?`<span class="chip">${ICON.calendar} ${expired?'Ended '+U.date(o.expiry):days+' days left'}</span>`:''}
-          </div>
-        </div>
-        <div class="veh-acts">
-          <button class="btn btn-sm" data-oact="edit" data-id="${o.id}">${ICON.edit} Edit</button>
-          <button class="btn btn-sm ${o.active?'btn-warn':'btn-ok'}" data-oact="toggle" data-id="${o.id}">${o.active?ICON.x+' Switch off':ICON.check+' Switch on'}</button>
-          <button class="btn btn-sm" data-oact="dup" data-id="${o.id}" aria-label="Duplicate ${U.esc(o.title)}" title="Duplicate">${ICON.copy}</button>
-          <button class="btn btn-sm btn-dan" data-oact="del" data-id="${o.id}" aria-label="Delete ${U.esc(o.title)}" title="Delete">${ICON.trash}</button>
-        </div>
-      </div>`;
-    }).join('')}</div>`
-    : H.empty('tag','No offers yet','Create your first promotional banner to highlight a finance deal or monthly special.',
-        `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Create offer</button>`)}`;
-  },
-  mount(root){
-    U.on(root,'click','[data-act="add"]',()=>Modules.offerForm(null));
-    U.on(root,'click','[data-oact]',async(e,b)=>{
-      const o = Store.find('offers',b.dataset.id);
-      if(!o) return;
-      const act = b.dataset.oact;
-      if(act==='edit') return Modules.offerForm(o.id);
-      if(act==='toggle'){
-        Store.update('offers',o.id,{active:!o.active});
-        Store.log('Offer '+(o.active?'switched on':'switched off'),o.title,'tag',o.active?'ok':'warn');
-        Router.refresh(); UI.toast('ok',o.active?'Offer is live':'Offer switched off','');
-      }
-      if(act==='dup'){
-        const copy = Object.assign({},o,{id:U.id('o'),title:o.title+' (copy)',active:false,createdAt:Date.now()});
-        Store.insert('offers',copy);
-        Router.refresh(); UI.toast('ok','Offer duplicated','');
-      }
-      if(act==='del'){
-        if(await UI.confirm({title:'Delete this offer?',message:'"'+o.title+'" will be removed from your website.',confirmText:'Delete offer'})){
-          Store.remove('offers',o.id);
-          Store.log('Offer deleted',o.title,'trash','dan');
-          Router.refresh(); UI.toast('ok','Offer deleted','');
         }
       }
     });
@@ -3837,104 +3530,10 @@ Portal.register({
       <div style="font-family:${a.heading==='System default'?'inherit':a.heading}, var(--font);font-size:19px;font-weight:750;letter-spacing:-.03em">Where Performance Meets Precision</div>
       <p style="font-size:12.5px;color:var(--text-2);margin-top:6px;font-family:${a.bodyFont==='System default'?'inherit':a.bodyFont}, var(--font)">Body text uses the ${U.esc(a.bodyFont)} font. Headings use ${U.esc(a.heading)}.</p>
       <div class="row" style="margin-top:14px">
-        <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};background:${a.accent};color:#fff;font-weight:650;font-size:13px;box-shadow:${sh}">View our builds</span>
+        <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};background:${a.accent};color:#fff;font-weight:650;font-size:13px;box-shadow:${sh}">View our services</span>
         <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};background:${a.success};color:#fff;font-weight:650;font-size:13px;box-shadow:${a.btnShadow?'0 8px 22px -10px '+a.success+'88':'none'}">WhatsApp us</span>
         <span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:${r};border:1px solid var(--line-2);font-weight:650;font-size:13px">Contact</span>
       </div>`;
-  }
-});
-
-/* ==================================================================
-   MODULE: Analytics
-   ================================================================== */
-Portal.register({
-  id:'analytics', title:'Analytics', sub:'How your website is performing', icon:'chart', group:'Insights',
-  render(){
-    const a = Store.data.analytics;
-    const st = Store.stats();
-    /* No traffic entered yet means no trend to show - null, never NaN. */
-    const growth = Number(a.visitorsPrev)>0
-      ? Math.round(((a.visitors30Total-a.visitorsPrev)/a.visitorsPrev)*100) : null;
-    const maxV = Math.max.apply(null,a.visitors7.concat([1]));
-    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    const topVeh = Store.list('builds').filter(v=>!v.archived).sort((x,y)=>(y.views||0)-(x.views||0)).slice(0,6);
-    const spark = (vals)=>{
-      const max = Math.max.apply(null,vals), min = Math.min.apply(null,vals);
-      const pts = vals.map((v,i)=>{
-        const x = (i/(vals.length-1))*100;
-        const y = 46 - ((v-min)/(max-min||1))*38;
-        return x.toFixed(1)+','+y.toFixed(1);
-      }).join(' ');
-      return `<svg class="spark" viewBox="0 0 100 52" preserveAspectRatio="none">
-        <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity=".38"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
-        </linearGradient></defs>
-        <polygon points="0,52 ${pts} 100,52" fill="url(#sg)"/>
-        <polyline points="${pts}" fill="none" stroke="var(--accent-2)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-      </svg>`;
-    };
-    return `
-    ${H.head('Analytics','A snapshot of your website traffic and the leads it produces. These figures are sample data for design purposes.',
-      `<span class="chip warn">${ICON.info} Sample data</span>`)}
-    <div class="stats" style="margin-bottom:16px">
-      ${H.stat({label:'Visitors this month',count:a.visitors30Total,icon:'users',sub:growth===null?'<span>No previous month to compare</span>':`<span class="trend ${growth>=0?'up':'down'}">${growth>=0?'+':''}${growth}%</span><span>vs last month</span>`})}
-      ${H.stat({label:'Build views',count:a.buildViews,icon:'eye',tone:'vio',sub:'<span>Across all published builds</span>'})}
-      ${H.stat({label:'WhatsApp clicks',count:a.whatsappClicks,icon:'whatsapp',tone:'ok',sub:'<span class="trend up">Your best lead source</span>'})}
-      ${H.stat({label:'Phone calls',count:a.phoneCalls,icon:'phone',tone:'warn',sub:'<span>Tap to call on mobile</span>'})}
-      ${H.stat({label:'Form enquiries',count:a.formSubmits,icon:'inbox',sub:'<span>Sent from your contact page</span>'})}
-      ${H.stat({label:'Conversion rate',value:Number(a.visitors30Total)>0?((a.whatsappClicks+a.phoneCalls+a.formSubmits)/a.visitors30Total*100).toFixed(1)+'%':'No data',icon:'trend',tone:Number(a.visitors30Total)>0?'ok':'',sub:Number(a.visitors30Total)>0?'<span>Visitors who made contact</span>':'<span>Enter your visitor numbers first</span>'})}
-    </div>
-
-    <div class="grid" style="grid-template-columns:1.5fr 1fr;align-items:start;margin-bottom:16px" data-an-cols>
-      ${H.card('Visitors this week','Daily unique visitors',`
-        <div class="bars">
-          ${a.visitors7.map((v,i)=>`<div class="bar-col"><b>${U.num(v)}</b><div class="bar" style="height:${Math.round((v/maxV)*112)}px"></div><span>${days[i]}</span></div>`).join('')}
-        </div>
-        <div class="sep"></div>
-        ${spark(a.visitors7)}`)}
-      ${H.card('Where visitors come from','Traffic sources',`
-        <div class="rank">
-          ${Object.keys(a.sources).map((k,i)=>`
-            <div class="rank-row">
-              <div class="rank-top"><span class="rank-n">${i+1}</span><b>${U.esc(k)}</b><span>${a.sources[k]}%</span></div>
-              <div class="meter ${i%3===1?'ok':i%3===2?'vio':''}"><i data-w="${a.sources[k]}%"></i></div>
-            </div>`).join('')}
-        </div>`)}
-    </div>
-
-    <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start;margin-bottom:16px" data-an-cols>
-      ${H.card('Most viewed builds','Your most popular builds',
-        topVeh.length?`<div class="rank">${topVeh.map((v,i)=>`
-          <div class="rank-row">
-            <div class="rank-top"><span class="rank-n">${i+1}</span><b>${U.esc(v.name)}</b><span>${U.num(v.views||0)}</span></div>
-            <div class="meter"><i data-w="${Math.round(((v.views||0)/(topVeh[0].views||1))*100)}%"></i></div>
-          </div>`).join('')}</div>`:H.empty('stage','No builds yet','Add builds to see view counts.'))}
-      ${H.card('Devices used','How people browse your website',`
-        <div class="rank">
-          ${Object.keys(a.devices).map((k,i)=>`
-            <div class="rank-row">
-              <div class="rank-top"><span class="rank-n">${ICON.globe?i+1:''}</span><b>${U.esc(k)}</b><span>${a.devices[k]}%</span></div>
-              <div class="meter ${i===0?'ok':i===1?'':'warn'}"><i data-w="${a.devices[k]}%"></i></div>
-            </div>`).join('')}
-        </div>
-        <div class="note" style="margin-top:16px">${ICON.info}<div>Most of your visitors are on a phone, so your mobile layout matters most.</div></div>`)}
-    </div>
-
-    ${H.card('Enquiries by status','Where your leads currently sit',`
-      <div class="grid g3">
-        ${[['Unread',st.unread,'dan'],['Contacted',Store.list('enquiries').filter(e=>e.status==='contacted').length,'warn'],['Quoted',Store.list('enquiries').filter(e=>e.status==='quoted').length,'warn'],['Booked',Store.list('enquiries').filter(e=>e.status==='booked').length,'vio'],['Completed',Store.list('enquiries').filter(e=>e.status==='completed').length,'ok']]
-          .map(r=>`<div class="stat" style="animation:none">
-            <div class="stat-lab">${r[0]}</div>
-            <div class="stat-val" data-count="${r[1]}"></div>
-            <div class="meter ${r[2]==='ok'?'ok':r[2]==='warn'?'warn':''}" style="margin-top:10px"><i data-w="${st.enquiries?Math.round((r[1]/st.enquiries)*100):0}%"></i></div>
-          </div>`).join('')}
-      </div>`)}`;
-  },
-  mount(root){
-    const fix = ()=>U.els('[data-an-cols]',root).forEach((g,i)=>{
-      g.style.gridTemplateColumns = window.innerWidth<960 ? 'minmax(0,1fr)' : (i===0?'1.5fr 1fr':'1fr 1fr');
-    });
-    fix(); window.addEventListener('resize',U.debounce(fix,200));
   }
 });
 
@@ -3966,7 +3565,9 @@ Portal.register({
             <div class="sep" style="margin:6px 0"></div>
             <div class="kv">
               <div class="kv-row"><span>Data stored</span><b>${kb} KB</b></div>
-              <div class="kv-row"><span>Vehicles</span><b>${st.total + st.archived}</b></div>
+              <div class="kv-row"><span>Services</span><b>${st.services}</b></div>
+              <div class="kv-row"><span>Performance stages</span><b>${st.stages}</b></div>
+              <div class="kv-row"><span>Products and brands</span><b>${st.products + st.brands}</b></div>
               <div class="kv-row"><span>Gallery images</span><b>${st.gallery}</b></div>
               <div class="kv-row"><span>Enquiries</span><b>${st.enquiries}</b></div>
               <div class="kv-row"><span>Last saved</span><b>${U.dateTime(m.lastSaved)}</b></div>
@@ -3976,7 +3577,6 @@ Portal.register({
 
         ${H.card('Export data','Spreadsheet exports for your records',`
           <div class="grid" style="gap:9px">
-            <button class="btn btn-block" data-act="csvveh">${ICON.file} Export builds as CSV</button>
             <button class="btn btn-block" data-act="csvenq">${ICON.file} Export enquiries as CSV</button>
             <button class="btn btn-block" data-act="csvtst">${ICON.file} Export testimonials as CSV</button>
           </div>`)}
@@ -4047,7 +3647,6 @@ DB.size()    // storage used in bytes
     U.on(root,'click','[data-act="export"]',()=>Modules.exportAll());
     U.on(root,'click','[data-act="import"]',()=>U.el('#impFile',root).click());
     U.el('#impFile',root).addEventListener('change',e=>Modules.importAll(e.target.files[0]));
-    U.on(root,'click','[data-act="csvveh"]',()=>Modules.exportBuilds());
     U.on(root,'click','[data-act="csvenq"]',()=>Modules.exportEnquiries());
     U.on(root,'click','[data-act="csvtst"]',()=>Modules.exportTestimonials());
 
@@ -4078,7 +3677,6 @@ DB.size()    // storage used in bytes
     });
     U.on(root,'click','[data-act="clearveh"]',async()=>{
       if(await UI.confirm({title:'Delete all vehicles?',message:'Every vehicle and its photos will be removed from your website.',confirmText:'Delete all vehicles'})){
-        Store.replaceAll('builds',[]);
         Store.log('All vehicles deleted','The stock list was cleared','trash','dan');
         Router.refresh(); UI.toast('ok','Vehicles deleted','');
       }
@@ -4100,16 +3698,14 @@ Portal.register({
   render(){
     const on = Cloud.on, authed = Cloud.authed;
     const samples = {
-      builds:Store.list('builds').filter(v=>v.demo).length,
       testimonials:Store.list('testimonials').filter(t=>t.demo).length,
-      offers:Store.list('offers').filter(o=>o.demo).length,
       enquiries:Store.list('enquiries').filter(e=>e.demo).length
     };
-    const sampleTotal = samples.builds+samples.testimonials+samples.offers+samples.enquiries;
+    const sampleTotal = samples.testimonials+samples.enquiries;
     /* Every synced collection, so a new one can never be silently
        missing from this summary again. */
     const real = {};
-    ['builds','services','stages','products','brands','faqs','testimonials','offers','enquiries']
+    ['services','stages','products','brands','faqs','testimonials','enquiries']
       .forEach(k=>{ real[k] = Store.list(k).filter(r=>!r.demo).length; });
 
     return `
@@ -4128,7 +3724,7 @@ Portal.register({
     </div>
 
     ${sampleTotal?`<div class="note dan" style="margin-bottom:16px">${ICON.warn}<div>
-      <b>This portal still contains ${sampleTotal} placeholder records.</b> ${samples.builds} builds, ${samples.testimonials} reviews, ${samples.offers} offers and ${samples.enquiries} enquiries are samples, not real jobs. They are excluded from every database push, and you should delete them before going live.
+      <b>This portal still contains ${sampleTotal} placeholder records.</b> ${samples.testimonials} reviews and ${samples.enquiries} enquiries are samples, not real content. They are excluded from every database push, and you should delete them before going live.
       <div style="margin-top:11px"><button class="btn btn-sm btn-dan" data-act="killdemo">${ICON.trash} Delete all ${sampleTotal} sample records</button></div>
     </div></div>`:''}
 
@@ -4166,14 +3762,12 @@ Portal.register({
         ${on?H.card('3. Move your content across','Only your own records are sent, never the samples',`
           <div class="grid" style="gap:12px">
             <div class="kv">
-              <div class="kv-row"><span>Your builds</span><b>${real.builds}</b></div>
               <div class="kv-row"><span>Your services</span><b>${real.services}</b></div>
               <div class="kv-row"><span>Your stages</span><b>${real.stages}</b></div>
               <div class="kv-row"><span>Your products</span><b>${real.products}</b></div>
               <div class="kv-row"><span>Your brands</span><b>${real.brands}</b></div>
               <div class="kv-row"><span>Your FAQs</span><b>${real.faqs}</b></div>
               <div class="kv-row"><span>Your reviews</span><b>${real.testimonials}</b></div>
-              <div class="kv-row"><span>Your offers</span><b>${real.offers}</b></div>
               <div class="kv-row"><span>Your enquiries</span><b>${real.enquiries}</b></div>
             </div>
             <button class="btn btn-pri btn-block ${authed?'':'hidden'}" data-act="push">${ICON.upload} Push my content to the database</button>
@@ -4186,7 +3780,7 @@ Portal.register({
       <div class="grid" style="gap:14px">
         ${H.card('How your data is protected','The rules the schema puts in place',`
           <div class="grid" style="gap:9px">
-            ${[['Visitors may read vehicles, testimonials and live offers','ok'],
+            ${[['Visitors may read your published website content','ok'],
                ['Visitors may submit an enquiry and nothing more','ok'],
                ['Only your signed in account may read enquiries','ok'],
                ['Only your signed in account may add or change content','ok'],
@@ -4200,17 +3794,6 @@ Portal.register({
         ${H.card('4. Let your website read the data','What still has to happen on the website itself',`
           <div class="grid" style="gap:12px">
             <div class="note warn">${ICON.warn}<div>Connecting this portal does not change ${U.esc(DOMAIN)} on its own. The website has to be changed to read from Supabase instead of its current hardcoded pages.</div></div>
-            <span class="hint">A builds page then needs only this much code:</span>
-            <div class="code">const URL = '${on?U.esc(Cloud.cfg.url):'https://YOUR-PROJECT.supabase.co'}';
-const KEY = 'your publishable key';
-
-const res = await fetch(
-  URL + '/rest/v1/website_builds?select=*',
-  { headers:{ apikey:KEY, Authorization:'Bearer '+KEY } }
-);
-const builds = await res.json();
-// builds is now every published build, featured first,
-// with drafts and archived builds already removed.</div>
             <span class="hint">And a contact form posts an enquiry straight into your inbox:</span>
             <div class="code">await fetch(URL + '/rest/v1/enquiries', {
   method:'POST',
@@ -4227,9 +3810,8 @@ const builds = await res.json();
 
         ${H.card('What lives where','',`
           <div class="kv">
-            <div class="kv-row"><span>Builds, services, stages, products, brands, FAQs, reviews, offers, enquiries</span><b>One row each</b></div>
+            <div class="kv-row"><span>Services, stages, products, brands, FAQs, reviews, enquiries</span><b>One row each</b></div>
             <div class="kv-row"><span>Homepage, contact, appearance, gallery</span><b>site_settings</b></div>
-            <div class="kv-row"><span>Build photos</span><b>build-images bucket</b></div>
             <div class="kv-row"><span>Gallery photos</span><b>gallery bucket</b></div>
             <div class="kv-row"><span>Logo, favicon, banners</span><b>branding bucket</b></div>
             <div class="kv-row"><span>Your account password</span><b>Held by Supabase Auth</b></div>
@@ -4296,7 +3878,7 @@ const builds = await res.json();
     U.on(root,'click','[data-act="push"]',async()=>{
       const ok = await UI.confirm({
         title:'Push your content to the database?',
-        message:'Your own vehicles, testimonials, offers, enquiries and settings are written to Supabase. Records marked as samples are left behind. Anything already in the database with the same id is overwritten.',
+        message:'Your services, stages, products, brands, FAQs, reviews, enquiries and settings are written to Supabase. Anything already in the database with the same id is overwritten.',
         confirmText:'Push to database', tone:'warn'
       });
       if(!ok) return;
@@ -4304,7 +3886,7 @@ const builds = await res.json();
         const c = await Cloud.pushAll();
         Store.log('Content pushed to database',c.vehicles+' vehicles and '+c.enquiries+' enquiries uploaded','upload','ok');
         Store.persist(true); Router.refresh();
-        UI.toast('ok','Pushed to the database',c.vehicles+' vehicles, '+c.testimonials+' testimonials, '+c.offers+' offers');
+        UI.toast('ok','Pushed to the database',Object.values(c||{}).reduce((a,b)=>a+b,0)+' records');
       }catch(err){ UI.toast('err','Push failed',err.message); }
     });
 
@@ -4323,14 +3905,14 @@ const builds = await res.json();
     });
 
     U.on(root,'click','[data-act="killdemo"]',async()=>{
-      const n = ['builds','testimonials','offers','enquiries'].reduce((a,k)=>a+Store.list(k).filter(r=>r.demo).length,0);
+      const n = ['testimonials','enquiries'].reduce((a,k)=>a+Store.list(k).filter(r=>r.demo).length,0);
       const ok = await UI.confirm({
         title:'Delete all sample records?',
         message:'All '+n+' placeholder records are removed, including the fabricated vehicles, reviews and enquiries. Your own content and your settings are untouched.',
         confirmText:'Delete sample records'
       });
       if(!ok) return;
-      ['builds','testimonials','offers','enquiries'].forEach(k=>{
+      ['testimonials','enquiries'].forEach(k=>{
         Store.replaceAll(k,Store.list(k).filter(r=>!r.demo));
       });
       Store.log('Sample records deleted','Placeholder content was cleared out','trash','warn');
@@ -4374,37 +3956,6 @@ const SCHEMA_SQL = `create table if not exists public.site_settings (
   key         text primary key,
   value       jsonb not null default '{}'::jsonb,
   updated_at  timestamptz not null default now()
-);
-
-create table if not exists public.builds (
-  id             text primary key,
-  title          text not null default '',
-  make           text default '',
-  model          text default '',
-  year           int,
-  engine         text default '',
-  fuel           text default '',
-  transmission   text default '',
-  stage          text default '',
-  tuning_type    text default '',
-  validation     text default '',
-  power_before   numeric default 0,
-  power_after    numeric default 0,
-  torque_before  numeric default 0,
-  torque_after   numeric default 0,
-  work_done      jsonb not null default '[]'::jsonb,
-  description    text default '',
-  images         jsonb not null default '[]'::jsonb,
-  customer_ref   text default '',
-  status         text default 'draft',
-  featured       boolean not null default false,
-  published      boolean not null default false,
-  archived       boolean not null default false,
-  views          int not null default 0,
-  completed_at   timestamptz,
-  sort_order     int not null default 0,
-  created_at     timestamptz not null default now(),
-  updated_at     timestamptz not null default now()
 );
 
 create table if not exists public.services (
@@ -4492,21 +4043,6 @@ create table if not exists public.testimonials (
   updated_at  timestamptz not null default now()
 );
 
-create table if not exists public.offers (
-  id           text primary key,
-  title        text not null default '',
-  description  text default '',
-  btn_text     text default '',
-  btn_link     text default '',
-  colour       text default '#b3121f',
-  image        text default '',
-  active       boolean not null default false,
-  expiry       timestamptz,
-  sort_order   int not null default 0,
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
-);
-
 create table if not exists public.enquiries (
   id            text primary key,
   name          text not null default '',
@@ -4540,10 +4076,6 @@ create table if not exists public.activity_log (
   at      timestamptz not null default now()
 );
 
-create index if not exists builds_public_idx
-  on public.builds (archived, published, featured, sort_order);
-create index if not exists builds_created_idx
-  on public.builds (created_at desc);
 create index if not exists services_division_idx
   on public.services (division, active, sort_order);
 create index if not exists faqs_category_idx
@@ -4566,7 +4098,7 @@ $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['site_settings','builds','services','stages','products','brands','faqs','testimonials','offers','enquiries']
+  foreach t in array array['site_settings','services','stages','products','brands','faqs','testimonials','enquiries']
   loop
     execute format('drop trigger if exists touch_%1$s on public.%1$s', t);
     execute format(
@@ -4599,14 +4131,12 @@ revoke all on function public.is_owner() from public, anon;
 grant execute on function public.is_owner() to authenticated;
 
 alter table public.site_settings enable row level security;
-alter table public.builds        enable row level security;
 alter table public.services      enable row level security;
 alter table public.stages        enable row level security;
 alter table public.products      enable row level security;
 alter table public.brands        enable row level security;
 alter table public.faqs          enable row level security;
 alter table public.testimonials  enable row level security;
-alter table public.offers        enable row level security;
 alter table public.enquiries     enable row level security;
 alter table public.activity_log  enable row level security;
 
@@ -4617,7 +4147,7 @@ begin
     select schemaname, tablename, policyname
     from pg_policies
     where schemaname = 'public'
-      and tablename in ('site_settings','builds','services','stages','products','brands','faqs','testimonials','offers','enquiries','activity_log','portal_owners')
+      and tablename in ('site_settings','services','stages','products','brands','faqs','testimonials','enquiries','activity_log','portal_owners')
   loop
     execute format('drop policy %I on %I.%I', r.policyname, r.schemaname, r.tablename);
   end loop;
@@ -4627,33 +4157,26 @@ create policy "owner reads own membership" on public.portal_owners
   for select to authenticated using (user_id = auth.uid());
 
 create policy "public reads settings"     on public.site_settings for select to anon using (true);
-create policy "public reads builds"       on public.builds        for select to anon using (archived = false and published = true);
 create policy "public reads services"     on public.services      for select to anon using (active = true);
 create policy "public reads stages"       on public.stages        for select to anon using (active = true);
 create policy "public reads products"     on public.products      for select to anon using (active = true);
 create policy "public reads brands"       on public.brands        for select to anon using (active = true);
 create policy "public reads faqs"         on public.faqs          for select to anon using (active = true);
 create policy "public reads testimonials" on public.testimonials  for select to anon using (true);
-create policy "public reads live offers"  on public.offers        for select to anon
-  using (active = true and (expiry is null or expiry > now()));
-
 create policy "public submits enquiry" on public.enquiries for insert to anon with check (true);
 
 create policy "owner manages settings"     on public.site_settings for all to authenticated using (public.is_owner()) with check (public.is_owner());
-create policy "owner manages builds"       on public.builds        for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages services"     on public.services      for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages stages"       on public.stages        for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages products"     on public.products      for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages brands"       on public.brands        for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages faqs"         on public.faqs          for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages testimonials" on public.testimonials  for all to authenticated using (public.is_owner()) with check (public.is_owner());
-create policy "owner manages offers"       on public.offers        for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages enquiries"    on public.enquiries     for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages activity"     on public.activity_log  for all to authenticated using (public.is_owner()) with check (public.is_owner());
 
 insert into storage.buckets (id, name, public)
-values ('build-images','build-images',true),
-       ('gallery','gallery',true),
+values ('gallery','gallery',true),
        ('branding','branding',true)
 on conflict (id) do update set public = true;
 
@@ -4670,23 +4193,13 @@ begin
 end $$;
 
 create policy "venom public read" on storage.objects for select to anon, authenticated
-  using (bucket_id in ('build-images','gallery','branding'));
+  using (bucket_id in ('gallery','branding'));
 create policy "venom owner insert" on storage.objects for insert to authenticated
-  with check (bucket_id in ('build-images','gallery','branding') and public.is_owner());
+  with check (bucket_id in ('gallery','branding') and public.is_owner());
 create policy "venom owner update" on storage.objects for update to authenticated
-  using (bucket_id in ('build-images','gallery','branding') and public.is_owner());
+  using (bucket_id in ('gallery','branding') and public.is_owner());
 create policy "venom owner delete" on storage.objects for delete to authenticated
-  using (bucket_id in ('build-images','gallery','branding') and public.is_owner());
-
-create or replace view public.website_builds
-  with (security_invoker = true) as
-  select id, title, make, model, year, engine, fuel, transmission, stage,
-         tuning_type, validation, power_before, power_after,
-         torque_before, torque_after, work_done, description, images,
-         featured, views, completed_at, sort_order, created_at
-  from public.builds
-  where archived = false and published = true
-  order by featured desc, sort_order asc, created_at desc;
+  using (bucket_id in ('gallery','branding') and public.is_owner());
 
 create or replace view public.website_services
   with (security_invoker = true) as
@@ -4725,19 +4238,19 @@ create or replace view public.website_faqs
 
 grant usage on schema public to anon, authenticated;
 
-grant select on public.site_settings, public.builds, public.services,
+grant select on public.site_settings, public.services,
                 public.stages, public.products, public.brands, public.faqs,
-                public.testimonials, public.offers,
-                public.website_builds, public.website_services,
+                public.testimonials,
+                public.website_services,
                 public.website_stages, public.website_products,
                 public.website_brands, public.website_faqs to anon;
 grant insert on public.enquiries to anon;
 
 grant select, insert, update, delete
-  on public.site_settings, public.builds, public.services, public.stages,
+  on public.site_settings, public.services, public.stages,
      public.products, public.brands, public.faqs, public.testimonials,
-     public.offers, public.enquiries, public.activity_log to authenticated;
-grant select on public.website_builds, public.website_services,
+     public.enquiries, public.activity_log to authenticated;
+grant select on public.website_services,
                 public.website_stages, public.website_products,
                 public.website_brands, public.website_faqs,
                 public.portal_owners to authenticated;
@@ -4766,7 +4279,6 @@ const Modules = {
     ['stages','Performance stages','stage','performance.html'],
     ['products','Products','additive','performance.html'],
     ['brands','Brands','shield','performance.html'],
-    ['builds','Proven results','dyno','performance.html'],
     ['testimonials','Reviews','star','reviews.html and the homepage'],
     ['faqs','FAQs','question','faqs.html and the homepage']
   ],
@@ -4795,7 +4307,6 @@ const Modules = {
     const rows = Modules.LIVE_SECTIONS.map(([key,label,icon,where])=>{
       const portal = Store.list(key).filter(r=>{
         if(r.demo) return false;
-        if(key==='builds') return r.published && !r.archived;
         if('active' in r) return r.active;
         return true;
       }).length;
@@ -4854,334 +4365,6 @@ const Modules = {
     }
   },
 
-  /* ---------- performance builds ---------------------------------- */
-  filterBuilds(all,s){
-    let list = all.slice();
-    if(s.tab==='archived') list = list.filter(b=>b.archived);
-    else{
-      list = list.filter(b=>!b.archived);
-      if(s.tab==='published') list = list.filter(b=>b.published);
-      if(s.tab==='drafts')    list = list.filter(b=>!b.published);
-      if(s.tab==='featured')  list = list.filter(b=>b.featured);
-    }
-    if(s.make) list = list.filter(b=>b.make===s.make);
-    if(s.q){
-      const q = s.q.toLowerCase();
-      list = list.filter(b=>[b.title,b.make,b.model,b.stage,b.engine,b.tuningType,String(b.year)].join(' ').toLowerCase().indexOf(q)>=0);
-    }
-    const gain = b=>(Number(b.powerAfter)||0)-(Number(b.powerBefore)||0);
-    const stageIx = b=>{ const i = BUSINESS.vocab.stages.indexOf(b.stage); return i<0?99:i; };
-    const by = {
-      'newest':(a,b)=>(b.completedAt||b.createdAt)-(a.completedAt||a.createdAt),
-      'oldest':(a,b)=>(a.completedAt||a.createdAt)-(b.completedAt||b.createdAt),
-      'gain-hi':(a,b)=>gain(b)-gain(a),
-      'power-hi':(a,b)=>(Number(b.powerAfter)||0)-(Number(a.powerAfter)||0),
-      'stage':(a,b)=>stageIx(a)-stageIx(b),
-      'views':(a,b)=>(b.views||0)-(a.views||0),
-      'name':(a,b)=>String(a.title).localeCompare(String(b.title))
-    };
-    return list.sort(by[s.sort]||by.newest);
-  },
-
-  buildCard(b){
-    const img = b.images && b.images[0];
-    const gain = (Number(b.powerAfter)||0)-(Number(b.powerBefore)||0);
-    const vehicle = [b.year,b.make,b.model].filter(Boolean).join(' ');
-    return `<article class="veh ${b.archived?'sold':''}" data-bopen="${b.id}" style="cursor:pointer">
-      <div class="veh-img">
-        ${img?`<img src="${img}" alt="${U.esc(b.title)}" loading="lazy">`
-             :`<div class="none">${ICON.image}<span>No photos yet</span></div>`}
-        <div class="veh-tags">
-          ${b.demo?`<span class="chip dan" title="Placeholder content, not real"><i></i>Sample</span>`:''}
-          ${b.featured?`<span class="chip acc"><i></i>Featured</span>`:''}
-          ${!b.published&&!b.archived?`<span class="chip warn"><i></i>Draft</span>`:''}
-          ${b.archived?`<span class="chip"><i></i>Archived</span>`:''}
-        </div>
-        ${b.images&&b.images.length?`<span class="veh-count">${ICON.image} ${b.images.length}</span>`:''}
-        ${b.stage?`<div class="veh-stage"><b>${U.esc(b.stage)}</b></div>`:''}
-      </div>
-      <div class="veh-b">
-        <div class="veh-name">${U.esc(b.title)}</div>
-        <div class="veh-meta">${U.esc(vehicle||'Vehicle not set')}${b.engine?' · '+U.esc(b.engine):''}</div>
-        <div class="veh-price">${gain>0?'+'+U.num(gain)+' kW':(b.powerAfter?U.num(b.powerAfter)+' kW':'Figures not set')}
-          ${b.powerBefore&&b.powerAfter?`<small>${U.num(b.powerBefore)} kW to ${U.num(b.powerAfter)} kW</small>`:''}
-        </div>
-        <div class="veh-specs">
-          <div class="veh-spec">${ICON.ecu}${U.esc(b.tuningType||'Not set')}</div>
-          <div class="veh-spec">${ICON.dyno}${U.esc(b.validation||'Not validated')}</div>
-          <div class="veh-spec">${ICON.fuel}${U.esc(b.fuel||'')}</div>
-          <div class="veh-spec">${ICON.eye}${U.num(b.views||0)} views</div>
-        </div>
-      </div>
-      <div class="veh-acts">
-        <button class="btn btn-sm" data-bact="edit" data-id="${b.id}">${ICON.edit} Edit</button>
-        ${b.archived
-          ? `<button class="btn btn-sm btn-ok" data-bact="unarchive" data-id="${b.id}">${ICON.refresh} Restore</button>`
-          : `<button class="btn btn-sm ${b.published?'btn-warn':'btn-ok'}" data-bact="publish" data-id="${b.id}">${b.published?ICON.eye+' Unpublish':ICON.check+' Publish'}</button>`}
-        <button class="btn btn-sm btn-icon" data-bact="menu" data-id="${b.id}" title="More actions">${ICON.grip}</button>
-      </div>
-    </article>`;
-  },
-
-  repaintBuilds(){
-    const mod = Portal.byId.builds;
-    const root = U.el('#view');
-    const list = Modules.filterBuilds(Store.list('builds'),mod.state);
-    const grid = U.el('.veh-grid',root);
-    if(!grid) return Router.refresh();
-    if(!list.length) return Router.refresh();
-    grid.innerHTML = list.map(Modules.buildCard).join('');
-    UI.animateAll(grid);
-  },
-
-  async buildAction(act,id){
-    const b = Store.find('builds',id);
-    if(!b) return;
-    if(act==='edit') return Modules.buildForm(id);
-    if(act==='menu') return Modules.buildMenu(b);
-
-    if(act==='publish'){
-      const now = !b.published;
-      Store.update('builds',id,{published:now,status:now?'published':'draft',featured:now?b.featured:false});
-      Store.log(now?'Build published':'Build unpublished',b.title,'checkCircle',now?'ok':'acc');
-      Store.persist(true); Router.refresh();
-      UI.toast('ok',now?'Published to your website':'Removed from your website',b.title);
-    }
-    if(act==='feature'){
-      Store.update('builds',id,{featured:!b.featured});
-      Store.log(!b.featured?'Build featured':'Build unfeatured',b.title,'star');
-      Router.refresh(); UI.toast('ok',!b.featured?'Added to featured':'Removed from featured',b.title);
-    }
-    if(act==='dup'){
-      const copy = Object.assign({},b,{
-        id:U.id('b'), title:b.title+' (copy)', published:false, featured:false, archived:false,
-        status:'draft', views:0, createdAt:Date.now(),
-        images:(b.images||[]).slice(), workDone:(b.workDone||[]).slice()
-      });
-      Store.insert('builds',copy);
-      Store.log('Build duplicated',copy.title,'copy');
-      Router.refresh(); UI.toast('ok','Build duplicated','Edit the copy and update its details');
-    }
-    if(act==='archive'){
-      Store.update('builds',id,{archived:true,featured:false,published:false});
-      Store.log('Build archived',b.title+' was hidden from the website','archive','warn');
-      Router.refresh(); UI.toast('ok','Build archived','It is hidden from your website but not deleted');
-    }
-    if(act==='unarchive'){
-      Store.update('builds',id,{archived:false});
-      Store.log('Build restored',b.title+' is back in your list','refresh','ok');
-      Router.refresh(); UI.toast('ok','Build restored','');
-    }
-    if(act==='del'){
-      if(await UI.confirm({title:'Delete this build?',message:b.title+' and all of its photos will be permanently removed. Archive it instead if you only want to hide it.',confirmText:'Delete build'})){
-        Store.remove('builds',id);
-        Store.log('Build deleted',b.title,'trash','dan');
-        Router.refresh(); UI.toast('ok','Build deleted','');
-      }
-    }
-  },
-
-  buildMenu(b){
-    const m = UI.modal({
-      size:'sm', title:b.title, sub:'Choose an action', autofocus:false, footer:false,
-      body:`<div class="grid" style="gap:8px">
-        <button class="btn btn-block" data-m="edit">${ICON.edit} Edit all details</button>
-        <button class="btn btn-block" data-m="feature">${ICON.star} ${b.featured?'Remove from featured':'Add to featured'}</button>
-        <button class="btn btn-block" data-m="publish">${b.published?ICON.eye+' Unpublish':ICON.check+' Publish to website'}</button>
-        <button class="btn btn-block" data-m="dup">${ICON.copy} Duplicate this build</button>
-        ${b.archived
-          ? `<button class="btn btn-block btn-ok" data-m="unarchive">${ICON.refresh} Restore from archive</button>`
-          : `<button class="btn btn-block btn-warn" data-m="archive">${ICON.archive} Archive and hide</button>`}
-        <div class="sep" style="margin:4px 0"></div>
-        <button class="btn btn-block btn-dan" data-m="del">${ICON.trash} Delete permanently</button>
-      </div>`
-    });
-    U.on(m.el,'click','[data-m]',(e,btn)=>{ m.close(); setTimeout(()=>Modules.buildAction(btn.dataset.m,b.id),160); });
-  },
-
-  buildForm(id){
-    const editing = !!id;
-    const v = editing ? Object.assign({},Store.find('builds',id)) : {
-      title:'', make:'', model:'', year:new Date().getFullYear(), engine:'', fuel:'Petrol',
-      transmission:'Manual', stage:'Stage 1', tuningType:'ECU remap', validation:'Dyno',
-      powerBefore:0, powerAfter:0, torqueBefore:0, torqueAfter:0, workDone:[], description:'',
-      customerRef:'', images:[], status:'draft', featured:false, published:false, archived:false,
-      views:0, completedAt:Date.now()
-    };
-    if(!v.workDone) v.workDone = [];
-    if(!v.images) v.images = [];
-    const draft = Object.assign({},v);
-    let tab = 'details';
-
-    const body = `
-      <div class="tabs" data-btabs>
-        <button data-bt="details" class="on">Vehicle</button>
-        <button data-bt="tune">Tune &amp; results</button>
-        <button data-bt="images">Photos <span class="n" data-imgc>${draft.images.length}</span></button>
-        <button data-bt="content">Write-up</button>
-        <button data-bt="status">Status</button>
-      </div>
-      <div data-bpanel></div>`;
-
-    const m = UI.modal({
-      size:'lg',
-      title: editing ? 'Edit build' : 'Add a new build',
-      sub: editing ? 'Changes appear on your website as soon as you save.' : 'Fill in what you know. You can always come back and add the dyno figures later.',
-      body,
-      footer:`<button class="btn" data-close>Cancel</button>
-              <div class="sp">
-                ${editing?`<button class="btn btn-dan" data-bdel>${ICON.trash} Delete</button>`:''}
-                <button class="btn btn-pri" data-bsave>${ICON.check} ${editing?'Save changes':'Add build'}</button>
-              </div>`
-    });
-
-    const panel = U.el('[data-bpanel]',m.el);
-
-    function paint(){
-      if(tab==='details'){
-        panel.innerHTML = `
-          <div class="grid g2">
-            ${H.field('Build title',H.input('title',draft.title,'BMW M4 Stage 2'),'This is the heading shown on your website.')}
-            ${H.field('Job reference',H.input('customerRef',draft.customerRef,'Optional'),'Not shown publicly. For your records only.','optional')}
-            ${H.field('Make',H.sel('make',draft.make,[{v:'',l:'Choose a make'}].concat(BUSINESS.vocab.makes)))}
-            ${H.field('Model',H.input('model',draft.model,'M4 Competition'))}
-            ${H.field('Year',`<input class="inp" data-k="year" type="number" min="1970" max="${new Date().getFullYear()+1}" value="${draft.year}">`)}
-            ${H.field('Engine',H.input('engine',draft.engine,'3.0L S55 Twin Turbo'))}
-            ${H.field('Fuel',H.sel('fuel',draft.fuel,BUSINESS.vocab.fuels))}
-            ${H.field('Transmission',H.sel('transmission',draft.transmission,BUSINESS.vocab.trans))}
-          </div>`;
-      }
-      if(tab==='tune'){
-        const gainKw = (Number(draft.powerAfter)||0)-(Number(draft.powerBefore)||0);
-        const gainNm = (Number(draft.torqueAfter)||0)-(Number(draft.torqueBefore)||0);
-        const pct = Number(draft.powerBefore)>0 ? Math.round((gainKw/draft.powerBefore)*100) : 0;
-        panel.innerHTML = `
-          <div class="grid g2">
-            ${H.field('Stage',H.sel('stage',draft.stage,BUSINESS.vocab.stages))}
-            ${H.field('Tuning type',H.sel('tuningType',draft.tuningType,BUSINESS.vocab.tuningTypes))}
-            ${H.field('Validated on',H.sel('validation',draft.validation,BUSINESS.vocab.validation))}
-            ${H.field('Date completed',`<input class="inp" data-k="completedAt" type="date" value="${draft.completedAt?new Date(draft.completedAt).toISOString().slice(0,10):''}">`)}
-          </div>
-          <div class="sep"></div>
-          <div class="grid g2">
-            ${H.field('Power before, kW',`<input class="inp" data-k="powerBefore" type="number" min="0" value="${draft.powerBefore}">`)}
-            ${H.field('Power after, kW',`<input class="inp" data-k="powerAfter" type="number" min="0" value="${draft.powerAfter}">`)}
-            ${H.field('Torque before, Nm',`<input class="inp" data-k="torqueBefore" type="number" min="0" value="${draft.torqueBefore}">`)}
-            ${H.field('Torque after, Nm',`<input class="inp" data-k="torqueAfter" type="number" min="0" value="${draft.torqueAfter}">`)}
-          </div>
-          <div class="sep"></div>
-          <div class="grid" style="gap:12px">
-            <div class="note">${ICON.info}<div>Only publish figures you can back with a dyno sheet or V-Box run. These are the numbers customers will quote back to you.</div></div>
-            <div class="card" style="box-shadow:none;background:var(--glass)"><div class="card-b">
-              <div class="kv">
-                <div class="kv-row"><span>Power gain</span><b>${gainKw>0?'+'+U.num(gainKw)+' kW'+(pct?' ('+pct+'%)':''):'Not set'}</b></div>
-                <div class="kv-row"><span>Torque gain</span><b>${gainNm>0?'+'+U.num(gainNm)+' Nm':'Not set'}</b></div>
-                <div class="kv-row"><span>Validated on</span><b>${U.esc(draft.validation||'Not set')}</b></div>
-              </div>
-            </div></div>
-          </div>`;
-      }
-      if(tab==='images'){
-        panel.innerHTML = `
-          <div class="grid" style="gap:14px">
-            <div class="note">${ICON.info}<div>Add up to 6 photos. The first photo is the main image on your website, so make it the best shot of the finished car. Drag any photo to change the order.</div></div>
-            <div id="bUp"></div>
-          </div>`;
-        UI.uploader(U.el('#bUp',panel),{
-          max:6, images:draft.images, bucket:BUSINESS.buckets.primary, label:'Drop build photos here or tap to browse',
-          hint:'Landscape photos look best. Dyno graphs work well too.',
-          onChange:imgs=>{ draft.images = imgs; const c=U.el('[data-imgc]',m.el); if(c) c.textContent = imgs.length; }
-        });
-      }
-      if(tab==='content'){
-        panel.innerHTML = `
-          <div class="grid" style="gap:16px">
-            ${H.field('Write-up',H.ta('description',draft.description,'Describe the build, what the customer wanted and what you fitted.',7),'Mention the hardware, the calibration approach and how it was validated.')}
-            ${H.field('Work done',`<div id="bWork"></div>`,'Type an item and press Enter. These show as a tick list on your website.')}
-            <div class="row">
-              <button class="btn btn-sm" data-quick="Downpipe">Add downpipe</button>
-              <button class="btn btn-sm" data-quick="Full exhaust system">Add exhaust</button>
-              <button class="btn btn-sm" data-quick="Intercooler upgrade">Add intercooler</button>
-              <button class="btn btn-sm" data-quick="Intake / induction upgrade">Add intake</button>
-              <button class="btn btn-sm" data-quick="Hybrid turbo">Add hybrid turbo</button>
-              <button class="btn btn-sm" data-quick="Water-Methanol Injection (WMI)">Add WMI</button>
-            </div>
-          </div>`;
-        const tg = UI.tags(U.el('#bWork',panel),draft.workDone,list=>draft.workDone=list);
-        U.on(panel,'click','[data-quick]',(e,btn)=>{
-          const val = btn.dataset.quick;
-          if(draft.workDone.indexOf(val)<0){ draft.workDone.push(val); tg.get(); paint(); }
-          else UI.toast('warn','Already added',val+' is already on the list.');
-        });
-      }
-      if(tab==='status'){
-        panel.innerHTML = `
-          <div class="grid" style="gap:11px">
-            ${H.toggleCard('published',draft.published,'Published','Show this build on your website','ok','check')}
-            ${H.toggleCard('featured',draft.featured,'Featured build','Show this build on your homepage','','star')}
-            ${H.toggleCard('archived',draft.archived,'Archived','Hides the build from your website completely','','archive')}
-            <div class="sep"></div>
-            ${H.field('Build views',`<input class="inp" data-k="views" type="number" min="0" value="${draft.views||0}">`,'Used in your analytics.')}
-          </div>`;
-      }
-      H.bind(panel,(k,val)=>{
-        if(k==='completedAt'){ draft.completedAt = val ? new Date(val).getTime() : null; return; }
-        draft[k] = ['year','powerBefore','powerAfter','torqueBefore','torqueAfter','views'].indexOf(k)>=0 ? Number(val)||0 : val;
-        /* Suggest a title from make, model and stage on new builds only. */
-        if((k==='make'||k==='model'||k==='stage') && !editing && !draft.title && draft.make && draft.model){
-          const n = U.el('[data-k="title"]',panel);
-          draft.title = (draft.make+' '+draft.model+(draft.stage?' '+draft.stage:'')).trim();
-          if(n) n.value = draft.title;
-        }
-      },()=>{});
-    }
-
-    U.on(m.el,'click','[data-bt]',(e,btn)=>{
-      tab = btn.dataset.bt;
-      U.els('[data-bt]',m.el).forEach(x=>x.classList.toggle('on',x.dataset.bt===tab));
-      paint();
-    });
-
-    U.el('[data-bsave]',m.el).addEventListener('click',()=>{
-      if(!draft.title.trim() && !(draft.make && draft.model)){
-        tab='details';
-        U.els('[data-bt]',m.el).forEach(x=>x.classList.toggle('on',x.dataset.bt==='details'));
-        paint();
-        return UI.toast('err','A title is needed','Give the build a title, or choose a make and model.');
-      }
-      if(!draft.title.trim()) draft.title = (draft.make+' '+draft.model).trim();
-      if(draft.published && Number(draft.powerAfter)>0 && Number(draft.powerBefore)>0 && draft.powerAfter<draft.powerBefore){
-        tab='tune';
-        U.els('[data-bt]',m.el).forEach(x=>x.classList.toggle('on',x.dataset.bt==='tune'));
-        paint();
-        return UI.toast('err','Check the power figures','Power after is lower than power before. Swap them or correct the numbers.');
-      }
-      draft.status = draft.archived ? 'archived' : draft.published ? 'published' : 'draft';
-      if(editing){
-        Store.update('builds',id,draft);
-        Store.log('Build updated',draft.title+' details were edited','edit');
-      }else{
-        Store.insert('builds',draft);
-        const gain = (Number(draft.powerAfter)||0)-(Number(draft.powerBefore)||0);
-        Store.log('Build added',draft.title+(gain>0?' at +'+gain+' kW':''),'stage','ok');
-      }
-      Store.persist(true);
-      m.close();
-      Router.refresh();
-      UI.toast('ok',editing?'Build saved':'Build added',draft.title);
-    });
-
-    const del = U.el('[data-bdel]',m.el);
-    if(del) del.addEventListener('click',async()=>{
-      if(await UI.confirm({title:'Delete this build?',message:draft.title+' and all of its photos will be permanently removed.',confirmText:'Delete build'})){
-        Store.remove('builds',id);
-        Store.log('Build deleted',draft.title,'trash','dan');
-        m.close(); Router.refresh(); UI.toast('ok','Build deleted','');
-      }
-    });
-
-    paint();
-  },
   /* ---------- services, stages, products, brands, faqs ------------ */
   serviceForm(id,division){
     const editing = !!id;
@@ -5361,19 +4544,6 @@ const Modules = {
     });
   },
 
-  sortRow(v){
-    const gain = (Number(v.powerAfter)||0)-(Number(v.powerBefore)||0);
-    return `<div class="sortrow" data-id="${v.id}">
-      <span class="drag-handle">${ICON.grip}</span>
-      ${v.images&&v.images[0]?`<img src="${v.images[0]}" alt="">`:`<div class="li-ic">${ICON.stage}</div>`}
-      <div style="min-width:0;flex:1">
-        <b style="font-size:13px;display:block">${U.esc(v.title)}</b>
-        <small style="font-size:11.5px;color:var(--text-3)">${U.esc(v.stage||'')}${gain>0?' · +'+U.num(gain)+' kW':''}</small>
-      </div>
-      <button class="btn btn-sm btn-icon btn-dan" data-unfeat="${v.id}" title="Remove from featured">${ICON.x}</button>
-    </div>`;
-  },
-
   heroPreview(){
     const h = Store.data.homepage;
     UI.modal({
@@ -5396,7 +4566,7 @@ const Modules = {
     const editing = !!id;
     const t = editing ? Object.assign({},Store.find('testimonials',id)) : { name:'', subject:'', rating:5, review:'', photo:'', featured:true, source:'Google', dateText:'' };
     const draft = Object.assign({},t);
-    const vehNames = Store.list('builds').map(v=>v.title);
+    const vehNames = Store.list('services').filter(x=>x.active).map(x=>x.title);
 
     const m = UI.modal({
       size:'md',
@@ -5429,75 +4599,6 @@ const Modules = {
       if(editing){ Store.update('testimonials',id,draft); Store.log('Testimonial updated','Review from '+draft.name,'star'); }
       else{ Store.insert('testimonials',draft); Store.log('Testimonial added','Review from '+draft.name,'star','ok'); }
       m.close(); Router.refresh(); UI.toast('ok',editing?'Testimonial saved':'Testimonial added',draft.name);
-    });
-  },
-
-  /* ---------- offers -------------------------------------------- */
-  offerForm(id){
-    const editing = !!id;
-    const o = editing ? Object.assign({},Store.find('offers',id)) : {
-      title:'', description:'', btnText:'Find out more', btnLink:'#contact', colour:BUSINESS.brand.accent,
-      image:'', active:true, expiry:Date.now()+86400000*30
-    };
-    const draft = Object.assign({},o);
-    const colours = [BUSINESS.brand.accent,'#e01e2e','#7a0c15','#2a9d6f','#f4a261','#6ea8c9','#0a0a0b'];
-
-    const m = UI.modal({
-      size:'md',
-      title: editing ? 'Edit offer' : 'Create a special offer',
-      sub:'Promotional banners appear near the top of your homepage.',
-      body:`<div class="grid" style="gap:14px">
-        ${H.field('Offer title',H.input('title',draft.title,'Winter tuning special'))}
-        ${H.field('Description',H.ta('description',draft.description,'Zero deposit finance available on selected vehicles.',3))}
-        <div class="grid g2">
-          ${H.field('Button text',H.input('btnText',draft.btnText,'Apply for finance'))}
-          ${H.field('Button link',H.input('btnLink',draft.btnLink,'#finance'))}
-        </div>
-        <div class="grid g2">
-          ${H.field('Expiry date',`<input class="inp" data-k="expiry" type="date" value="${U.dateInput(draft.expiry)}">`,'The banner hides itself after this date.')}
-          ${H.field('Banner colour',`<div class="swatches" style="padding-top:4px">
-            ${colours.map(c=>`<button class="sw ${draft.colour.toLowerCase()===c.toLowerCase()?'on':''}" data-oc="${c}" style="background:${c}"></button>`).join('')}
-            <input class="color-in" type="color" data-k="colour" value="${draft.colour}" aria-label="Offer banner colour">
-          </div>`)}
-        </div>
-        ${H.field('Background image',`<div id="offImg"></div>`,'Optional. A subtle image behind the text.','optional')}
-        ${H.toggleCard('active',draft.active,'Offer is live','Show this banner on your website now','ok','globe')}
-        <div class="sep" style="margin:2px 0"></div>
-        <label style="font-size:12px;font-weight:600;color:var(--text-2)">Preview</label>
-        <div id="offPrev"></div>
-      </div>`,
-      footer:`<button class="btn" data-close>Cancel</button>
-              <div class="sp"><button class="btn btn-pri" data-save>${ICON.check} ${editing?'Save changes':'Create offer'}</button></div>`
-    });
-
-    const prev = ()=>{
-      U.el('#offPrev',m.el).innerHTML = `
-        <div class="offer-prev" style="background:linear-gradient(140deg,${draft.colour},${draft.colour}22)">
-          ${draft.image?`<div class="bgimg" style="background-image:url('${draft.image}')"></div>`:''}
-          <h4>${U.esc(draft.title||'Your offer title')}</h4>
-          <p>${U.esc(draft.description||'Your offer description appears here.')}</p>
-          ${draft.btnText?`<span class="btn btn-sm" style="background:#fff;color:#111;border-color:transparent;font-weight:700">${U.esc(draft.btnText)}</span>`:''}
-        </div>`;
-    };
-    H.bind(m.el,(k,v)=>{
-      draft[k] = k==='expiry' ? (v?new Date(v).getTime():null) : v;
-      prev();
-    },()=>{});
-    U.els('[data-k]',m.el).forEach(el=>el.addEventListener('input',prev));
-    U.on(m.el,'click','[data-oc]',(e,b)=>{
-      draft.colour = b.dataset.oc;
-      U.els('[data-oc]',m.el).forEach(x=>x.classList.toggle('on',x.dataset.oc===draft.colour));
-      const ci = U.el('[data-k="colour"]',m.el); if(ci) ci.value = draft.colour;
-      prev();
-    });
-    UI.imagePicker(U.el('#offImg',m.el),{value:draft.image,label:'Upload image',h:80,max:1400,onChange:v=>{draft.image=v;prev();}});
-    prev();
-
-    U.el('[data-save]',m.el).addEventListener('click',()=>{
-      if(!draft.title.trim()) return UI.toast('err','A title is needed','Give your offer a short title.');
-      if(editing){ Store.update('offers',id,draft); Store.log('Offer updated',draft.title,'tag'); }
-      else{ Store.insert('offers',draft); Store.log('Offer created',draft.title,'tag','ok'); }
-      m.close(); Router.refresh(); UI.toast('ok',editing?'Offer saved':'Offer created',draft.title);
     });
   },
 
@@ -5565,7 +4666,7 @@ const Modules = {
 
   enquiryForm(){
     const draft = { name:'', phone:'', email:'', make:'', model:'', registration:'', service:'', vehicle:'', notes:'', source:'Phone call', status:'unread', message:'' };
-    const vehNames = Store.list('builds').filter(v=>!v.archived).map(v=>v.title);
+    const vehNames = Store.list('services').filter(x=>x.active).map(x=>x.title);
     const m = UI.modal({
       size:'md', title:'Log an enquiry', sub:'Capture a walk in or phone call so it does not get forgotten.',
       body:`<div class="grid" style="gap:14px">
@@ -5728,19 +4829,6 @@ const Modules = {
       '};',
       '',
       '/* ---- every published build, already filtered and ordered ---- */',
-      'async function loadBuilds(){',
-      "  const res = await fetch(SUPABASE_URL + '/rest/v1/website_builds?select=*', { headers });",
-      '  if(!res.ok) throw new Error(await res.text());',
-      '  return res.json();',
-      '}',
-      '',
-      '/* ---- only the featured ones, for the homepage ---- */',
-      'async function loadFeaturedBuilds(){',
-      "  const res = await fetch(SUPABASE_URL +",
-      "    '/rest/v1/website_builds?select=*&featured=is.true', { headers });",
-      '  return res.json();',
-      '}',
-      '',
       '/* ---- the service menu, split by division ---- */',
       'async function loadServices(division){',
       "  let url = SUPABASE_URL + '/rest/v1/website_services?select=*';",
@@ -5779,11 +4867,6 @@ const Modules = {
       '/* ---- reviews and any running promotion ---- */',
       'async function loadTestimonials(){',
       "  const res = await fetch(SUPABASE_URL + '/rest/v1/testimonials?select=*&order=sort_order.asc', { headers });",
-      '  return res.json();',
-      '}',
-      'async function loadOffers(){',
-      '  /* the database only returns offers that are switched on and unexpired */',
-      "  const res = await fetch(SUPABASE_URL + '/rest/v1/offers?select=*', { headers });",
       '  return res.json();',
       '}',
       '',
@@ -5850,20 +4933,6 @@ const Modules = {
       UI.toast('ok','Backup restored','Your portal has been updated');
     };
     fr.readAsText(file);
-  },
-
-  exportBuilds(){
-    const rows = [['Job reference','Title','Make','Model','Year','Engine','Fuel','Transmission','Stage','Tuning type','Validated on','Power before kW','Power after kW','Power gain kW','Torque before Nm','Torque after Nm','Torque gain Nm','Status','Featured','Published','Archived','Photos','Views','Work done','Write-up','Completed','Logged on']];
-    Store.list('builds').forEach(v=>rows.push([
-      v.customerRef,v.title,v.make,v.model,v.year,v.engine,v.fuel,v.transmission,v.stage,v.tuningType,v.validation,
-      v.powerBefore,v.powerAfter,(Number(v.powerAfter)||0)-(Number(v.powerBefore)||0),
-      v.torqueBefore,v.torqueAfter,(Number(v.torqueAfter)||0)-(Number(v.torqueBefore)||0),
-      v.status,v.featured?'Yes':'No',v.published?'Yes':'No',v.archived?'Yes':'No',
-      (v.images||[]).length,v.views||0,(v.workDone||[]).join('; '),v.description,
-      v.completedAt?U.date(v.completedAt):'',U.date(v.createdAt)
-    ]));
-    U.save(BUSINESS.slug+'-builds-'+new Date().toISOString().slice(0,10)+'.csv',U.csv(rows),'text/csv');
-    UI.toast('ok','Builds exported',rows.length-1+' builds saved to CSV');
   },
 
   exportEnquiries(){
@@ -6186,7 +5255,7 @@ const Shell = {
     });
     gs.addEventListener('keydown',e=>{
       if(e.key==='Enter' && gs.value.trim()){
-        location.hash = '#/builds?q='+encodeURIComponent(gs.value.trim());
+        location.hash = '#/services?q='+encodeURIComponent(gs.value.trim());
         gs.blur();
       }
     });

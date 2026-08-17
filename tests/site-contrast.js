@@ -1,5 +1,5 @@
 const PATH_=require('path'),fs=require('fs');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const css=fs.readFileSync(PATH_.join(SITE,'assets/css/variables.css'),'utf8');
 const tok={}; [...css.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})/g)].forEach(m=>tok[m[1]]=m[2]);
 const lum=h=>{const c=[1,3,5].map(i=>parseInt(h.substr(i,2),16)/255)

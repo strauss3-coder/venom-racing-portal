@@ -1,6 +1,6 @@
 const PATH_=require('path');
 const PORTAL=process.env.PORTAL_DIR||PATH_.resolve(__dirname,'..');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const fs=require('fs'),path=require('path'); const {JSDOM}=require('jsdom');
 const ROOT=SITE;
 

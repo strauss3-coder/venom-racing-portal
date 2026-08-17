@@ -1,6 +1,6 @@
 const PATH_=require('path');
 const PORTAL=process.env.PORTAL_DIR||PATH_.resolve(__dirname,'..');
-const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../../websites/venom-racing-website');
+const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-website');
 const fs=require('fs'),path=require('path'); const {JSDOM}=require('jsdom');
 const ROOT=SITE;
 const DATA={
@@ -18,12 +18,7 @@ const DATA={
     {id:'f2',question:'PORTAL question two?',answer:'Portal answer two.',category:'Booking',featured:false}],
   'testimonials':[{id:'t1',name:'PORTAL Reviewer',review:'Portal review text.',date_text:'today',sort_order:0}],
   'website_stages':[{id:'s1',name:'Stage 9',tagline:'PORTAL Stage Tagline',description:'Portal stage copy.',
-     requirements:['Portal req one','Portal req two'],benefits:[],note:'Portal note.',sort_order:0}],
-  'website_builds':[
-    {id:'b1',title:'PORTAL Golf Build',make:'VW',model:'Golf R',year:2021,engine:'2.0 TSI',stage:'Stage 2',
-     power_before:213,power_after:280,torque_before:380,torque_after:480,validation:'Dyno',featured:true,sort_order:0},
-    {id:'b2',title:'Incomplete Build',make:'BMW',model:'M2',year:2020,engine:'S55',stage:'Stage 1',
-     power_before:0,power_after:0,torque_before:0,torque_after:0,validation:'',featured:false,sort_order:1}]
+     requirements:['Portal req one','Portal req two'],benefits:[],note:'Portal note.',sort_order:0}]
 };
 function run(page,mode){
   return new Promise(res=>{
@@ -80,14 +75,7 @@ function run(page,mode){
      if(!/Portal req one/.test(g.textContent)) throw new Error('requirements missing');});
   t('stages VISIBLE',      ()=>{const c=[...d.querySelectorAll('[data-vr-stages] .slide-up')];
      if(c.some(x=>!x.classList.contains('is-visible'))) throw new Error('invisible cards');});
-  t('results section shown',()=>{const s2=d.querySelector('[data-vr-results]');
-     if(s2.hasAttribute('hidden')) throw new Error('still hidden');});
-  t('only proven builds',  ()=>{const g=d.querySelector('[data-vr-results-grid]');
-     if(/Incomplete Build/.test(g.textContent)) throw new Error('unproven build shown');
-     if(!/PORTAL Golf Build/.test(g.textContent)) throw new Error('proven build missing');});
-  t('gain computed',       ()=>{const g=d.querySelector('[data-vr-results-grid]');
-     if(!/\+67 kW/.test(g.textContent)) throw new Error(g.textContent.slice(0,140));
-     if(!/\+100 Nm/.test(g.textContent)) throw new Error('torque gain missing');});
+  t('no proven-results section',()=>{ if(d.querySelector('[data-vr-results]')) throw new Error('invented section still present'); });
   t('process section present',()=>{ if(!d.querySelector('#process')) throw new Error('missing'); });
 
   console.log('\n=== SERVICES PAGE shows the repairs division ===');
@@ -121,8 +109,6 @@ function run(page,mode){
        if(!n.some(x=>/Dastek/.test(x))) throw new Error('brands lost');});
     t('['+mode+'] stages intact', ()=>{const g=f.querySelector('[data-vr-stages]');
        if(!/Software Only/.test(g.textContent)) throw new Error('stage fallback lost');});
-    t('['+mode+'] results hidden',()=>{const s2=f.querySelector('[data-vr-results]');
-       if(!s2.hasAttribute('hidden')) throw new Error('empty results section exposed');});
     const r=(await run('reviews.html',mode)).document;
     t('['+mode+'] reviews intact',()=>{const g=r.querySelector('[data-reviews-grid]');
        if(!/William Nalane/.test(g.textContent)) throw new Error('reviews lost');});
