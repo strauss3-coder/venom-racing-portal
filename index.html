@@ -39,7 +39,7 @@
   --line-2:rgba(255,255,255,.14);
 
   --accent:#b3121f;
-  --accent-2:#e01e2e;
+  --accent-2:#e33140;  /* 4.50:1 on --bg (AA) - link and accent text */
   --accent-ink:#2a0206;
   --accent-soft:rgba(224,30,46,.14);
   --accent-glow:rgba(224,30,46,.45);
@@ -54,7 +54,7 @@
 
   --text:#f2f1f0;
   --text-2:#a3a3aa;
-  --text-3:#767680;
+  --text-3:#787882;   /* 4.53:1 on --bg (AA) */
 
   --r-xs:4px; --r-sm:8px; --r-md:16px; --r-lg:24px; --r-xl:28px; --r-pill:999px;
 
@@ -1748,6 +1748,47 @@ const Cloud = {
     this.lastSync = Date.now();
     this.setStatus(this.queue.length?'syncing':'online');
     return next;
+  },
+
+  /* First-run publish.
+
+     A brand new project has an empty database while the portal already
+     holds the client's real content. Nothing in the framework bridged
+     that gap - signing in neither pushed nor pulled - so the website
+     would keep serving its built-in fallback indefinitely.
+
+     Runs only when all three hold: the caller is a confirmed owner, the
+     database has no content of its own, and the portal has content to
+     publish. The middle condition is the important one: if the database
+     already has rows they are the source of truth and must never be
+     overwritten by a local seed. */
+  async ensureSeeded(){
+    if(this._seeding || !this.authed) return { skipped:'not-authed' };
+    this._seeding = true;
+    try{
+      const owner = await this.isOwner();
+      if(owner !== true) return { skipped:'not-owner', owner };
+
+      const probes = await Promise.all(
+        ['services','stages','products','brands','faqs','testimonials','builds']
+          .map(t=>this.selectAll(t).catch(()=>null))
+      );
+      const remoteRows = probes.reduce((n,r)=>n+((r&&r.length)||0),0);
+      if(remoteRows > 0) return { skipped:'remote-has-content', remoteRows };
+
+      const localRows = ['services','stages','products','brands','faqs','testimonials','builds','offers']
+        .reduce((n,k)=>n+Store.list(k).filter(r=>!r.demo).length,0);
+      if(!localRows) return { skipped:'nothing-local' };
+
+      const counts = await this.pushAll();
+      Store.log('Content published','Your website content was published to the database','upload','ok');
+      return { seeded:true, counts, localRows };
+    }catch(e){
+      this.lastError = e.message;
+      return { error:e.message };
+    }finally{
+      this._seeding = false;
+    }
   },
 
   async pushAll(opts){
@@ -5803,6 +5844,20 @@ const Shell = {
     document.title = BUSINESS.name+' '+BUSINESS.portalLabel;
   },
 
+  /* Publish on first connect, then keep quiet. Never blocks the UI. */
+  async afterAuth(){
+    const r = await Cloud.ensureSeeded();
+    if(r && r.seeded){
+      const n = Object.values(r.counts||{}).reduce((a,b)=>a+b,0);
+      UI.toast('ok','Website content published',n+' records are now live in your database');
+      Router.refresh();
+    }else if(r && r.skipped==='not-owner'){
+      UI.toast('warn','Not on the owner allowlist','Run add-me-as-owner.sql, then sign in again');
+    }
+    Shell.paintStatus();
+    return r;
+  },
+
   openSidebar(){ U.el('#sidebar').classList.add('on'); U.el('#scrim').classList.add('on'); },
   closeSidebar(){ U.el('#sidebar').classList.remove('on'); U.el('#scrim').classList.remove('on'); },
   applyTheme(){
@@ -5954,6 +6009,7 @@ const Shell = {
         Shell.lastEmail = email;
         Shell.login();
         setTimeout(()=>UI.toast('ok','Signed in',email),500);
+        Shell.afterAuth();
       }catch(ex){
         err.textContent =
           /invalid|credential|grant/i.test(ex.message) ? 'That email and password do not match an account. Check for typos, or reset your password below.'
@@ -6026,6 +6082,8 @@ Shell.init();
           Shell.login();
           /* renew the token if this session has been sitting for a while */
           if(Date.now() - (Cloud.session.at||0) > 40*60*1000) Cloud.refresh();
+          /* Covers the returning owner who never signs in again. */
+          Shell.afterAuth();
         }else{
           Shell.paintLogin();
           U.el('#login').classList.remove('hide');

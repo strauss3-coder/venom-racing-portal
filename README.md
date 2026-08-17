@@ -210,6 +210,18 @@ hydration. The Performance page carries the portal-driven stage cards.
 
 ---
 
+## Before launch — needs a person, not code
+
+**Have the legal pages reviewed.** `privacy.html` and `terms.html` carry
+working copy that describes what the site actually does, but neither has been
+reviewed by a qualified attorney. South African POPIA obligations apply to
+the enquiry data you now collect, and enquiries are processed by Supabase as
+a third party — the privacy policy should say so. Both pages are linked from
+the footer of all ten pages, so this is customer-facing.
+
+This is flagged here rather than as a comment in the code because it is a
+business decision, not a coding task.
+
 ## Troubleshooting
 
 **"I signed in but everything is empty."**
