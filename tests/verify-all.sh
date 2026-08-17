@@ -8,14 +8,14 @@ fail=0
 line(){ printf '%s\n' "------------------------------------------------------------"; }
 
 echo "PORTAL"; line
-for t in boot crud url firstrun preconf a11y seed contrast; do
+for t in boot crud url firstrun preconf a11y seed contrast livepanel; do
   r=$(node $t.js 2>&1 | tail -1)
   printf "  %-10s %s\n" "$t" "$r"
   echo "$r" | grep -q "PASS\|no issues" || fail=1
 done
 
 echo; echo "WEBSITE"; line
-for t in web sync sync2 site-a11y site-contrast responsive; do
+for t in web sync sync2 site-a11y site-contrast responsive live-render; do
   r=$(node $t.js 2>&1 | tail -1)
   printf "  %-10s %s\n" "$t" "$r"
   echo "$r" | grep -q PASS || fail=1

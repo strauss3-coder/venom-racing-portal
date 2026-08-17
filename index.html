@@ -1750,6 +1750,23 @@ const Cloud = {
     return next;
   },
 
+  /* Count what the public website can actually see, by reading the same
+     views the site reads. This is the honest answer to "is my portal
+     connected?" - it queries the database rather than trusting local state. */
+  async liveCounts(){
+    const map = {
+      services:'website_services', stages:'website_stages', products:'website_products',
+      brands:'website_brands', faqs:'website_faqs', builds:'website_builds',
+      testimonials:'testimonials'
+    };
+    const keys = Object.keys(map);
+    const rows = await Promise.all(keys.map(k=>this.selectAll(map[k]).catch(()=>null)));
+    const out = {};
+    keys.forEach((k,i)=>{ out[k] = rows[i] === null ? null : rows[i].length; });
+    out._reachable = rows.some(r=>r!==null);
+    return out;
+  },
+
   /* First-run publish.
 
      A brand new project has an empty database while the portal already
@@ -2229,6 +2246,21 @@ const Store = {
   },
 
   /* derived stats -------------------------------------------------- */
+  /* Enquiries per day for the last `days` days, oldest first. Derived from
+     the records themselves, so it is always true and never needs entering. */
+  enquirySeries(days){
+    const n = days || 7;
+    const out = [], labels = [];
+    const day = 86400000, now = new Date(); now.setHours(23,59,59,999);
+    const list = this.list('enquiries');
+    for(let i=n-1;i>=0;i--){
+      const end = now.getTime() - i*day, start = end - day + 1;
+      out.push(list.filter(e=>e.createdAt>=start && e.createdAt<=end).length);
+      labels.push(new Date(end).toLocaleDateString(BUSINESS.locale,{weekday:'short'}));
+    }
+    return { values:out, labels:labels, total:out.reduce((a,b)=>a+b,0) };
+  },
+
   stats(){
     const all = this.list('builds');
     const b = all.filter(x=>!x.archived);
@@ -2688,12 +2720,6 @@ Portal.register({
     const live = Store.data.meta.siteLive;
     const recent = (Store.data.activity||[]).slice(0,7);
     const topBuilds = Store.list('builds').filter(b=>!b.archived).sort((x,y)=>(y.views||0)-(x.views||0)).slice(0,5);
-    const maxV = Math.max.apply(null,a.visitors7.concat([1]));
-    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    /* Guarded: the seed ships zeroed analytics, and 0/0 must not render NaN. */
-    const hasTraffic = a.visitors7.some(n=>Number(n)>0) || Number(a.visitors30Total)>0;
-    const trendPct = Number(a.visitorsPrev)>0
-      ? Math.round(((a.visitors30Total-a.visitorsPrev)/a.visitorsPrev)*100) : null;
 
     return `
     ${H.head('Good day, welcome back','Here is how the '+BUSINESS.name+' website is performing right now.',`
@@ -2708,6 +2734,15 @@ Portal.register({
       ${H.stat({label:'Unread enquiries',count:st.unread,icon:'inbox',tone:st.unread?'dan':'ok',sub:`<span>${st.enquiries} enquiries in total</span>`})}
       ${H.stat({label:'Builds logged',count:st.published,icon:'image',sub:`<span>${st.drafts} draft${st.drafts===1?'':'s'} · proof of work</span>`})}
     </div>
+
+    ${H.card('Your live website','What visitors can see right now at '+DOMAIN,`
+      <div id="livePanel">
+        <div class="row" style="gap:10px;align-items:center;color:var(--text-3);font-size:13px">
+          ${ICON.refresh} Checking what is live on your website...
+        </div>
+      </div>`,
+      `<a class="btn btn-sm" href="${U.esc(BUSINESS.website)}" target="_blank" rel="noopener">${ICON.globe} View live site</a>
+       <button class="btn btn-sm btn-pri" data-act="publish">${ICON.upload} Publish changes</button>`)}
 
     <div class="grid" style="grid-template-columns:1.55fr 1fr;align-items:start;margin-bottom:16px" data-dash-cols>
       ${H.card('Quick actions','The jobs you do most often',`
@@ -2745,17 +2780,21 @@ Portal.register({
     </div>
 
     <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start;margin-bottom:16px" data-dash-cols>
-      ${H.card('Visitors this week','Daily unique visitors to your website',
-        hasTraffic ? `<div class="bars">
-          ${a.visitors7.map((v,i)=>`
-            <div class="bar-col">
-              <b>${U.num(v)}</b>
-              <div class="bar" style="height:${Math.round((v/maxV)*112)}px"></div>
-              <span>${days[i]}</span>
-            </div>`).join('')}
-        </div>`
-        : H.empty('chart','No traffic figures yet','Enter your visitor numbers on the Analytics page, or connect an analytics source.'),
-        hasTraffic && trendPct!==null ? `<span class="chip acc">${ICON.trend} ${trendPct}% vs last month</span>` : '')}
+      ${(()=>{
+        const ser = Store.enquirySeries(7);
+        const max = Math.max.apply(null, ser.values.concat([1]));
+        return H.card('Enquiries this week','Leads that reached you from the website, WhatsApp and phone',
+          ser.total ? `<div class="bars">
+            ${ser.values.map((v,i)=>`
+              <div class="bar-col">
+                <b>${U.num(v)}</b>
+                <div class="bar" style="height:${Math.round((v/max)*112)}px"></div>
+                <span>${U.esc(ser.labels[i])}</span>
+              </div>`).join('')}
+          </div>`
+          : H.empty('inbox','No enquiries this week','New leads from your website land here the moment a visitor sends the form.'),
+          ser.total ? `<span class="chip acc">${ICON.trend} ${ser.total} in the last 7 days</span>` : '');
+      })()}
       ${H.card('Most viewed builds','What visitors are looking at',
         topBuilds.length ? `<div class="rank">${topBuilds.map((b,i)=>{
           const max = topBuilds[0].views||1;
@@ -2778,8 +2817,10 @@ Portal.register({
     `;
   },
   mount(root){
+    Modules.paintLivePanel();
     U.on(root,'click','[data-go]',(e,b)=>location.hash='#/'+b.dataset.go);
     U.on(root,'click','[data-act="addbuild"]',()=>Modules.buildForm(null));
+    U.on(root,'click','[data-act="publish"]',()=>Modules.publishNow());
     U.on(root,'click','[data-act="refresh"]',()=>{ Router.refresh(); UI.toast('info','Refreshed','Showing the latest numbers'); });
     U.on(root,'click','[data-act="backup"]',()=>Modules.exportAll());
     U.on(root,'click','[data-act="clearlog"]',async()=>{
@@ -4715,6 +4756,102 @@ const Modules = {
       : status==='quoted' ? 'warn'
       : status==='booked' ? 'vio'
       : 'ok';
+  },
+
+  /* ---------- live website panel ---------------------------------- */
+
+  /* The sections the website reads, in the order they appear on it. */
+  LIVE_SECTIONS:[
+    ['services','Services','wrench','performance.html and services.html'],
+    ['stages','Performance stages','stage','performance.html'],
+    ['products','Products','additive','performance.html'],
+    ['brands','Brands','shield','performance.html'],
+    ['builds','Proven results','dyno','performance.html'],
+    ['testimonials','Reviews','star','reviews.html and the homepage'],
+    ['faqs','FAQs','question','faqs.html and the homepage']
+  ],
+
+  /* Compares what is live on the website against what is in the portal, so
+     "is this connected?" has a factual answer instead of a hopeful one. */
+  async paintLivePanel(){
+    const host = U.el('#livePanel');
+    if(!host) return;
+
+    if(!Cloud.authed){
+      host.innerHTML = `<div class="note warn">${ICON.warn}<div>Sign in to see what is live on your website.</div></div>`;
+      return;
+    }
+
+    const live = await Cloud.liveCounts();
+
+    if(!live._reachable){
+      host.innerHTML = `<div class="note dan">${ICON.warn}<div>
+        <b>Cannot reach your database.</b> Your website is still up and showing its built-in content,
+        but nothing you change here will appear until the connection returns.</div></div>`;
+      return;
+    }
+
+    let behind = 0, published = 0;
+    const rows = Modules.LIVE_SECTIONS.map(([key,label,icon,where])=>{
+      const portal = Store.list(key).filter(r=>{
+        if(r.demo) return false;
+        if(key==='builds') return r.published && !r.archived;
+        if('active' in r) return r.active;
+        return true;
+      }).length;
+      const onSite = live[key] == null ? 0 : live[key];
+      published += onSite;
+      const synced = onSite === portal;
+      if(!synced) behind++;
+      const tone = portal === 0 ? '' : synced ? 'ok' : 'warn';
+      return `<div class="list-item" style="padding:10px 4px">
+        <div class="li-ic ${tone||'acc'}">${ICON[icon]||ICON.globe}</div>
+        <div class="li-b">
+          <b>${U.esc(label)}</b>
+          <small>${portal===0 ? 'Nothing added yet' : (synced ? 'Live on '+U.esc(where) : 'Changed in the portal, not published yet')}</small>
+        </div>
+        <div class="li-t">
+          ${portal===0
+            ? `<span class="chip">0</span>`
+            : synced
+              ? `<span class="chip ok"><i></i>${onSite} live</span>`
+              : `<span class="chip warn"><i></i>${onSite} live of ${portal}</span>`}
+        </div>
+      </div>`;
+    }).join('');
+
+    const banner = behind === 0
+      ? `<div class="note keep" style="border-left:3px solid var(--success);background:var(--success-soft)">
+           ${ICON.checkCircle}<div><b>Your website is up to date.</b>
+           ${published} records are live at ${U.esc(DOMAIN)}. Anything you edit here appears on the
+           site the next time a visitor loads a page.</div></div>`
+      : `<div class="note warn">${ICON.warn}<div><b>${behind} section${behind===1?' is':'s are'} not published yet.</b>
+           The website is still showing older content for ${behind===1?'it':'them'}. Press
+           <b>Publish changes</b> to bring the site in line.</div></div>`;
+
+    host.innerHTML = banner + `<div style="margin-top:6px">${rows}</div>` +
+      `<div class="kv" style="margin-top:12px">
+         <div class="kv-row"><span>Website address</span><b><a href="${U.esc(BUSINESS.website)}" target="_blank" rel="noopener">${U.esc(DOMAIN)}</a></b></div>
+         <div class="kv-row"><span>Database</span><b>Connected</b></div>
+         <div class="kv-row"><span>Last published</span><b>${Cloud.lastSync?U.ago(Cloud.lastSync):'Not yet'}</b></div>
+       </div>`;
+  },
+
+  async publishNow(){
+    if(!Cloud.authed) return UI.toast('err','Sign in first','You need to be signed in to publish.');
+    const owner = await Cloud.isOwner();
+    if(owner !== true) return UI.toast('err','Not on the owner allowlist','Run add-me-as-owner.sql, then sign in again.');
+    UI.toast('info','Publishing','Sending your content to the website...');
+    try{
+      const counts = await Cloud.pushAll();
+      const n = Object.values(counts||{}).reduce((a,b)=>a+b,0);
+      Store.log('Website published',n+' records were published','upload','ok');
+      UI.toast('ok','Website updated',n+' records are now live');
+      Modules.paintLivePanel();
+      Router.paintBadges();
+    }catch(e){
+      UI.toast('err','Could not publish',e.message);
+    }
   },
 
   /* ---------- performance builds ---------------------------------- */
