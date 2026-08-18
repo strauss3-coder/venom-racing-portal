@@ -8,7 +8,7 @@ fail=0
 line(){ printf '%s\n' "------------------------------------------------------------"; }
 
 echo "PORTAL"; line
-for t in boot crud url firstrun preconf a11y seed contrast livepanel no-builds modal stress; do
+for t in boot crud url firstrun preconf a11y seed contrast livepanel no-builds modal stress modules-qa orphans; do
   r=$(node $t.js 2>&1 | tail -1)
   printf "  %-10s %s\n" "$t" "$r"
   echo "$r" | grep -q "PASS\|no issues" || fail=1

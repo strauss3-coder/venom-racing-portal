@@ -5084,6 +5084,7 @@ const Router = {
      module that attaches a window listener in mount() accumulates one
      copy per visit, and every one keeps firing. */
   _cleanups:[],
+  _nav:0,
   onTeardown(fn){ if(typeof fn==='function') Router._cleanups.push(fn); },
   teardown(){
     const fns = Router._cleanups;
@@ -5097,11 +5098,32 @@ const Router = {
     this.current = mod.id;
     U.els('.sb-link').forEach(b=>b.classList.toggle('on',b.dataset.nav===mod.id));
     U.el('#tbTitle').innerHTML = `${U.esc(mod.title)}<small>${U.esc(mod.sub||'')}</small>`;
-    const view = U.el('#view');
+
+    /* Replace the view element rather than just its innerHTML.
+
+       Every module's mount() registers delegated listeners with
+       U.on(root, ...), which calls root.addEventListener with no way to
+       detach. `root` is this element, and it used to survive every
+       navigation - so a module visited six times had six copies of each
+       handler, and one click on Add opened six stacked dialogs. Closing
+       one left five, which is what "the X needs several clicks" was.
+
+       Swapping in a clone drops every listener atomically, whatever a
+       module attached, so this cannot regress as modules are added. */
+    const stale = U.el('#view');
+    const view = stale.cloneNode(false);
+    stale.replaceWith(view);
+
     view.classList.remove('anim');
     view.innerHTML = UI.skeleton(mod.skeleton||'list',5);
     document.title = mod.title+' · '+BUSINESS.name+' '+BUSINESS.portalLabel;
+
+    /* A superseded navigation must not paint over a newer one. Two quick
+       clicks used to run both timeouts, mounting two modules onto the
+       same node. */
+    const token = ++Router._nav;
     setTimeout(()=>{
+      if(token !== Router._nav || !view.isConnected) return;
       view.innerHTML = mod.render(params||{});
       void view.offsetWidth;
       view.classList.add('anim');
