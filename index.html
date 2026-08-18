@@ -629,7 +629,14 @@ table.tbl .mut{color:var(--text-3);font-size:12px}
   position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:20px;
   background:rgba(4,5,7,.7);-webkit-backdrop-filter:blur(7px);;backdrop-filter:blur(7px);
   opacity:0;transition:opacity .3s var(--ease);overflow-y:auto;
+  /* An opacity:0 overlay still swallows clicks. Without this the scrim
+     kept intercepting for the 320ms of its fade-out, which is why a
+     modal appeared to need two or three clicks to dismiss. */
+  pointer-events:none;
 }
+.modal-scrim.on{pointer-events:auto}
+/* Held while any modal is open; `top` is set inline to the saved scroll. */
+body.modal-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .modal-scrim.on{opacity:1}
 .modal{
   width:100%;max-width:760px;margin:auto;border-radius:var(--r-xl);
@@ -1099,8 +1106,7 @@ const BUSINESS = {
     emailReply:(en)=>'Good day '+String(en.name||'').split(' ')[0]+',\n\nThank you for your enquiry at Venom Racing.\n\n'
   },
 
-  /* The dealership had a finance calculator here. A tuning workshop has
-     no equivalent, so the slot is empty rather than repurposed. */
+  /* No calculator: the website advertises no pricing to calculate. */
   calculator:null,
 
   roadmap:[
@@ -1324,7 +1330,7 @@ const DB = {
 
    The portal always writes to the local cache first, then mirrors the
    change to Supabase through a retry queue. That way a dropped signal
-   at the dealership never loses a change.
+   at the workshop never loses a change.
    ================================================================== */
 const ISO = ts => new Date(ts || Date.now()).toISOString();
 const MS  = v  => v ? new Date(v).getTime() : null;
@@ -2234,6 +2240,25 @@ const UI = {
     UI._pt = setTimeout(()=>UI.toast('ok','Saved','All changes are stored automatically'),120);
   },
 
+  /* Open modals, deepest last. Escape and the body scroll lock both act
+     on this stack rather than on whichever listener happened to fire. */
+  _stack:[],
+
+  _lockBody(){
+    if(UI._stack.length===1){
+      UI._scrollY = window.scrollY;
+      document.body.style.top = '-'+UI._scrollY+'px';
+      document.body.classList.add('modal-open');
+    }
+  },
+  _unlockBody(){
+    if(UI._stack.length===0){
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+      window.scrollTo(0, UI._scrollY||0);
+    }
+  },
+
   modal(opts){
     const root = U.el('#modalRoot');
     const scrim = document.createElement('div');
@@ -2245,26 +2270,49 @@ const UI = {
             <h3>${U.esc(opts.title||'')}</h3>
             ${opts.sub?`<p>${U.esc(opts.sub)}</p>`:''}
           </div>
-          <button class="x" data-close aria-label="Close">${ICON.x}</button>
+          <button class="x" type="button" data-close aria-label="Close">${ICON.x}</button>
         </div>
         <div class="modal-b">${opts.body||''}</div>
         ${opts.footer===false?'':`<div class="modal-f">${opts.footer||''}</div>`}
       </div>`;
+
+    const restoreFocus = document.activeElement;
     root.appendChild(scrim);
-    requestAnimationFrame(()=>scrim.classList.add('on'));
+
+    let closed = false;
+    const api = { el:scrim, node:U.el('.modal',scrim), body:U.el('.modal-b',scrim), footer:U.el('.modal-f',scrim) };
+
     const close = ()=>{
-      scrim.classList.remove('on');
+      /* Idempotent. Cancel, the X, the scrim and Escape can all race,
+         and onClose must fire exactly once. */
+      if(closed) return;
+      closed = true;
+      const i = UI._stack.indexOf(api);
+      if(i>=0) UI._stack.splice(i,1);
+      scrim.classList.remove('on');          /* drops pointer-events at once */
       setTimeout(()=>scrim.remove(),320);
-      document.removeEventListener('keydown',esc);
+      UI._unlockBody();
+      try{ if(restoreFocus && restoreFocus.focus) restoreFocus.focus(); }catch(e){}
       if(opts.onClose) opts.onClose();
     };
-    const esc = e=>{ if(e.key==='Escape') close(); };
-    document.addEventListener('keydown',esc);
-    scrim.addEventListener('click',e=>{ if(e.target===scrim) close(); });
-    U.els('[data-close]',scrim).forEach(b=>b.addEventListener('click',close));
-    const api = { el:scrim, node:U.el('.modal',scrim), body:U.el('.modal-b',scrim), footer:U.el('.modal-f',scrim), close };
+    api.close = close;
+
+    UI._stack.push(api);
+    UI._lockBody();
+    requestAnimationFrame(()=>{ if(!closed) scrim.classList.add('on'); });
+
+    /* Delegated, so a body re-rendered after mount still closes. Binding
+       each [data-close] once at creation left later ones inert. */
+    scrim.addEventListener('click',e=>{
+      if(e.target===scrim || (e.target.closest && e.target.closest('[data-close]'))) close();
+    });
+
     if(opts.onMount) opts.onMount(api);
-    setTimeout(()=>{ const f = U.el('input:not([type=file]),textarea,select',scrim); if(f && opts.autofocus!==false) f.focus(); },340);
+    setTimeout(()=>{
+      if(closed || opts.autofocus===false) return;
+      const f = U.el('input:not([type=file]),textarea,select',scrim);
+      if(f) f.focus();
+    },340);
     return api;
   },
 
@@ -2289,11 +2337,20 @@ const UI = {
     const root = U.el('#lightboxRoot');
     const box = document.createElement('div');
     box.className='lightbox';
-    box.innerHTML = `<button class="x">${ICON.x}</button><img src="${src}" alt="Preview">`;
+    box.innerHTML = `<button class="x" type="button" aria-label="Close preview">${ICON.x}</button><img src="${src}" alt="Preview">`;
     root.appendChild(box);
-    const close = ()=>box.remove();
+    let closed = false;
+    const close = ()=>{
+      if(closed) return;
+      closed = true;
+      /* Removed on every path, not just Escape - closing by click used to
+         leave the key listener attached for the life of the page. */
+      document.removeEventListener('keydown',esc);
+      box.remove();
+    };
+    const esc = e=>{ if(e.key==='Escape') close(); };
+    document.addEventListener('keydown',esc);
     box.addEventListener('click',e=>{ if(e.target===box || e.target.closest('.x')) close(); });
-    document.addEventListener('keydown',function h(e){ if(e.key==='Escape'){close();document.removeEventListener('keydown',h);} });
   },
 
   /* animated counters --------------------------------------------- */
@@ -2739,7 +2796,9 @@ Portal.register({
       g.style.gridTemplateColumns = window.innerWidth<960 ? 'minmax(0,1fr)' : (i===0?'1.55fr 1fr':'1fr 1fr');
     });
     fit();
-    window.addEventListener('resize',U.debounce(fit,200));
+    const onResize = U.debounce(fit,200);
+    window.addEventListener('resize',onResize);
+    Router.onTeardown(()=>window.removeEventListener('resize',onResize));
   }
 });
 
@@ -3057,7 +3116,7 @@ Portal.register({
               <div class="grid" style="gap:14px">
                 ${H.field('Small badge above the title',H.input('heroBadge',h.heroBadge,BUSINESS.copy.heroBadge),'Keep this short. It sits above the main headline.')}
                 ${H.field('Hero title',H.ta('heroTitle',h.heroTitle,BUSINESS.copy.heroTitle,2),'Your strongest sales message in one line.')}
-                ${H.field('Hero subtitle',H.ta('heroSubtitle',h.heroSubtitle,'Describe what makes your dealership different',3))}
+                ${H.field('Hero subtitle',H.ta('heroSubtitle',h.heroSubtitle,BUSINESS.copy.heroSubtitle,3))}
               </div>`)}
             ${H.card('Buttons','Where the hero buttons send visitors',`
               <div class="grid g2">
@@ -3091,7 +3150,7 @@ Portal.register({
               ${H.field('Section title',H.input('aboutTitle',h.aboutTitle,BUSINESS.copy.aboutTitle))}
               ${H.field('About text',H.ta('aboutText',h.aboutText,'Tell visitors who you are',6),'Two or three sentences works best on a homepage.')}
             </div>`)}
-          ${H.card('About image','A photo of your dealership or team','<div id="aboutImg"></div>')}
+          ${H.card('About image','A photo of your workshop','<div id="aboutImg"></div>')}
         </div>`;
       bindAll();
       UI.imagePicker(U.el('#aboutImg',host),{ value:h.aboutImage, label:'Upload about image', h:150, onChange:v=>{h.aboutImage=v;save();} });
@@ -3146,37 +3205,62 @@ Portal.register({
    MODULE: Gallery
    ================================================================== */
 Portal.register({
-  id:'gallery', title:'Gallery Manager', sub:'Photos shown on your gallery page', icon:'image', group:'Proof of work', instant:true,
+  id:'gallery', title:'Gallery Manager', sub:'Photos on your gallery page', icon:'image', group:'Proof of work', instant:true,
   badge(st){ return st.gallery ? {text:String(st.gallery),mut:true} : null; },
   render(){
+    const list = Store.list('gallery');
+    const cats = BUSINESS.vocab.galleryCats;
     return `
-    ${H.head('Gallery Manager','Upload photos of your dealership, your team and happy customers. Drag any image to change the order.',
+    ${H.head('Gallery Manager','Photos shown on your gallery page. Each one belongs to a category so the filters on the website work.',
       `<button class="btn btn-dan" data-act="clear">${ICON.trash} Remove all</button>`)}
-    ${H.card('Gallery images','Up to 30 images. The first image is used as your gallery cover.','<div id="galUp"></div>')}
+    ${H.card('Gallery images','Up to 30 images. Drag any image to change the order.','<div id="galUp"></div>')}
+    <div style="height:14px"></div>
+    ${list.length ? H.card('Captions and categories','Sets which website filter each image appears under',`
+      <div class="grid" style="gap:8px">
+        ${list.map((g,i)=>`
+          <div class="row" style="gap:10px;align-items:center">
+            <img src="${U.esc(g.url||g)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:var(--r-xs);flex-shrink:0">
+            <input class="inp" data-gl="${i}" value="${U.esc(g.label||'')}" placeholder="Caption" style="flex:1;min-width:0" aria-label="Caption for image ${i+1}">
+            <select class="sel" data-gc="${i}" style="max-width:210px" aria-label="Category for image ${i+1}">
+              ${cats.map(c=>`<option value="${U.esc(c)}" ${g.category===c?'selected':''}>${U.esc(c)}</option>`).join('')}
+            </select>
+          </div>`).join('')}
+      </div>`) : ''}
     <div style="height:14px"></div>
     ${H.card('How this works','',`
       <div class="grid" style="gap:10px">
-        <div class="note">${ICON.info}<div>Tap an image to preview it. Use the buttons on each image to replace, move or delete it. Every change saves instantly.</div></div>
-        <div class="note ok">${ICON.check}<div>Large photos are automatically resized so your website stays fast on mobile data.</div></div>
+        <div class="note">${ICON.info}<div>Images appear on your gallery page under the category you pick. Until you add any, the page keeps the photos already built into it.</div></div>
+        <div class="note ok">${ICON.check}<div>Large photos are resized automatically so the page stays fast on mobile data.</div></div>
       </div>`)}`;
   },
   mount(root){
     UI.uploader(U.el('#galUp',root),{
-      max:30, images:Store.list('gallery'), square:true, bucket:BUSINESS.buckets.gallery,
+      max:30, images:Store.list('gallery').map(g=>g.url||g), square:true, bucket:BUSINESS.buckets.gallery,
       label:'Drop photos here or tap to browse',
       hint:'You can select several at once.',
       onChange:v=>{
-        Store.data.gallery = v; Store.persist();
+        /* Keep the caption and category already set for an image. */
+        const prev = {}; Store.list('gallery').forEach(g=>{ if(g && g.url) prev[g.url]=g; });
+        Store.data.gallery = v.map(url => prev[url] || { url, category:BUSINESS.vocab.galleryCats[0], label:'' });
+        Store.persist();
         Store.log('Gallery updated',v.length+' images in your gallery','image');
         Router.paintBadges();
+        Router.refresh();
       }
     });
+    U.on(root,'change','[data-gc]',(e,el)=>{
+      const g = Store.data.gallery[Number(el.dataset.gc)];
+      if(g){ g.category = el.value; Store.persist(); UI.toast('ok','Category updated',g.category); }
+    });
+    U.on(root,'input','[data-gl]',U.debounce((e,el)=>{
+      const g = Store.data.gallery[Number(el.dataset.gl)];
+      if(g){ g.label = el.value; Store.persist(); }
+    },450));
     U.on(root,'click','[data-act="clear"]',async()=>{
-      if(!Store.list('gallery').length) return UI.toast('warn','Nothing to remove','Your gallery is already empty.');
-      if(await UI.confirm({title:'Remove all gallery images?',message:'Every image in your gallery will be deleted. This cannot be undone unless you have a backup.',confirmText:'Remove all'})){
+      if(await UI.confirm({title:'Remove every gallery image?',message:'All images are removed from your gallery page. Your website keeps the photos built into it.',confirmText:'Remove all'})){
         Store.data.gallery=[]; Store.persist();
-        Store.log('Gallery cleared','All gallery images were removed','trash','dan');
-        Router.refresh(); UI.toast('ok','Gallery cleared','');
+        Store.log('Gallery cleared','All images removed','trash','dan');
+        Router.refresh(); Router.paintBadges();
       }
     });
   }
@@ -3262,7 +3346,7 @@ Portal.register({
             ${H.field('WhatsApp number',H.input('whatsapp',c.whatsapp,BUSINESS.contact.whatsapp),'Include the country code so the WhatsApp button works from any phone.')}
             ${H.field('Email address',H.input('email',c.email,BUSINESS.contact.email,'email'))}
           </div>`)}
-        ${H.card('Location','Where your dealership is',`
+        ${H.card('Location','Where your workshop is',`
           <div class="grid" style="gap:14px">
             ${H.field('Street address',H.ta('address',c.address,'546 Rachel de Beer St, Pretoria North',2))}
             ${H.field('Google Maps link',H.input('mapsUrl',c.mapsUrl,BUSINESS.contact.mapsUrl),'Paste the share link from Google Maps. This powers the map and the directions button.')}
@@ -3435,13 +3519,13 @@ Portal.register({
    MODULE: Website appearance
    ================================================================== */
 Portal.register({
-  id:'appearance', title:'Website Appearance', sub:'Colours, fonts and branding', icon:'palette', group:'Website', instant:true,
+  id:'appearance', title:'Portal Appearance', sub:'How this portal looks on your devices', icon:'palette', group:'System', instant:true,
   render(){
     const a = Store.data.appearance;
     const accents = [BUSINESS.brand.accent,'#e01e2e','#7a0c15','#2a9d6f','#f4a261','#6ea8c9','#a3a3aa','#0a0a0b'];
     const fonts = ['Inter','Poppins','Montserrat','Roboto','Playfair Display','DM Sans','Manrope','System default'];
     return `
-    ${H.head('Website Appearance','Set the colours, fonts and logos used across your entire website.',
+    ${H.head('Portal Appearance','Colours, fonts and logo for this portal. Your website keeps its own styling, set in its stylesheets.',
       `<button class="btn" data-act="reset">${ICON.refresh} Reset to defaults</button>`)}
     <div class="grid g2" style="align-items:start">
       <div class="grid" style="gap:14px">
@@ -3730,7 +3814,7 @@ Portal.register({
 
     <div class="grid g2" style="align-items:start">
       <div class="grid" style="gap:14px">
-        ${H.card('1. Create your Supabase project','Free tier is enough for a dealership website',`
+        ${H.card('1. Create your Supabase project','The free tier is enough for this website',`
           <div class="grid" style="gap:12px">
             <div class="kv">
               <div class="kv-row"><span>Step one</span><b>Sign up at supabase.com and create a project</b></div>
@@ -4996,8 +5080,20 @@ const Router = {
     if(bell) bell.style.display = st.unread ? 'block' : 'none';
   },
 
+  /* Cleanups registered by the page currently mounted. Without this a
+     module that attaches a window listener in mount() accumulates one
+     copy per visit, and every one keeps firing. */
+  _cleanups:[],
+  onTeardown(fn){ if(typeof fn==='function') Router._cleanups.push(fn); },
+  teardown(){
+    const fns = Router._cleanups;
+    Router._cleanups = [];
+    fns.forEach(fn=>{ try{ fn(); }catch(e){} });
+  },
+
   go(id,params){
     const mod = Portal.byId[id] || Portal.modules[0];
+    Router.teardown();
     this.current = mod.id;
     U.els('.sb-link').forEach(b=>b.classList.toggle('on',b.dataset.nav===mod.id));
     U.el('#tbTitle').innerHTML = `${U.esc(mod.title)}<small>${U.esc(mod.sub||'')}</small>`;
@@ -5267,6 +5363,15 @@ const Shell = {
 /* ==================================================================
    BOOT
    ================================================================== */
+/* One Escape listener for the whole app. Previously each modal added its
+   own, so Escape with a confirm open closed the confirm and the form
+   underneath it in the same keystroke. */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape' || !UI._stack.length) return;
+  e.stopPropagation();
+  UI._stack[UI._stack.length-1].close();
+});
+
 Shell.applyBrand();  /* names the shell from BUSINESS before anything paints */
 Cloud.init();        /* must run before the store, which mirrors writes to it */
 Store.init();
