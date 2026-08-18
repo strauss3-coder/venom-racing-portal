@@ -1247,7 +1247,18 @@ const U = {
   on(root,ev,sel,fn){
     root.addEventListener(ev,e=>{
       const t = e.target.closest(sel);
-      if(t && root.contains(t)) fn(e,t);
+      if(!t || !root.contains(t)) return;
+      /* Swallow the second click of a double-click on the same control.
+         Every one of these is a single-action button, so a double-click
+         used to run the action twice - opening two identical editors,
+         or two confirms for one delete. Different controls are
+         unaffected, so stacked dialogs still work. */
+      if(ev==='click'){
+        const now = Date.now();
+        if(t.__lastAct && now - t.__lastAct < 300) return;
+        t.__lastAct = now;
+      }
+      fn(e,t);
     });
   },
   csv(rows){
@@ -2243,6 +2254,13 @@ const UI = {
   /* Open modals, deepest last. Escape and the body scroll lock both act
      on this stack rather than on whichever listener happened to fire. */
   _stack:[],
+
+  /* Close every open dialog. Modals live in #modalRoot, which the router
+     does not touch, so navigating with one open used to leave it sitting
+     over the new page blocking every click. */
+  closeAll(){
+    UI._stack.slice().reverse().forEach(m=>{ try{ m.close(); }catch(e){} });
+  },
 
   _lockBody(){
     if(UI._stack.length===1){
@@ -5094,6 +5112,7 @@ const Router = {
 
   go(id,params){
     const mod = Portal.byId[id] || Portal.modules[0];
+    UI.closeAll();
     Router.teardown();
     this.current = mod.id;
     U.els('.sb-link').forEach(b=>b.classList.toggle('on',b.dataset.nav===mod.id));
