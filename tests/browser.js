@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const BASE = 'http://127.0.0.1:8100/index.html';
+const BASE = process.env.PORTAL_URL || 'http://127.0.0.1:8100/index.html';
 const MODULES = ['dashboard','services','stages','products','faqs','homepage','gallery',
                  'testimonials','contact','enquiries','appearance','settings','database'];
 let bad = 0, consoleErrors = [], pageErrors = [];
@@ -23,6 +23,10 @@ const t = (n, cond, detail) => {
   // harsher UI case, since every module renders from local state.
   await ctx.route('**://*.supabase.co/**', r => r.abort());
   const page = await ctx.newPage();
+  await page.route('**/index.html*', async r => {
+    const h = { ...r.request().headers(), 'cache-control': 'no-cache', pragma: 'no-cache' };
+    await r.continue({ headers: h });
+  });
   page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
   page.on('pageerror', e => pageErrors.push(e.message));
 
