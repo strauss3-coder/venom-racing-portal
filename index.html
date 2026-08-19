@@ -1775,11 +1775,25 @@ const Cloud = {
     }
 
     const next = SEED();
+    /* Read before the loop: the gallery row's meaning depends on this flag
+       and the rows arrive in no particular order. */
+    const metaRow = (settings||[]).find(r=>r.key==='meta');
+    const seeded = !!(metaRow && metaRow.value && metaRow.value.gallerySeeded);
     (settings||[]).forEach(row=>{
-      if(row.key==='gallery') next.gallery = (row.value&&row.value.list)||[];
+      if(row.key==='gallery'){
+        const list = (row.value&&row.value.list)||[];
+        /* An empty gallery row is the state every portal is created in, not
+           a decision to show nothing. Until the backfill has been recorded,
+           an empty row keeps the built-in library rather than wiping it -
+           otherwise the 43 photos and videos already on the website are
+           erased on every sync and the manager looks permanently empty.
+           Once recorded, an empty list means what it says. */
+        next.gallery = list.length ? list : (seeded ? [] : next.gallery);
+      }
       else if(row.key==='meta') Object.assign(next.meta,row.value||{});
       else if(next[row.key]) next[row.key] = Store._merge(next[row.key],row.value||{});
     });
+    next.meta.gallerySeeded = true;
     for(const key of ['services','stages','products','brands','faqs','pageSections','seo','testimonials','enquiries','activity']){
       const m = MAP[key];
       const order = key==='activity' ? 'at.desc'
@@ -1897,7 +1911,9 @@ const Assets = {
    4. STORE
    ================================================================== */
 const SEED = () => ({
-  meta:{ version:1, createdAt:Date.now(), lastSaved:Date.now(), siteLive:true },
+  /* gallerySeeded: a fresh portal ships with the website's own gallery, so
+     it starts out already seeded. See pullAll for why this is recorded. */
+  meta:{ version:1, createdAt:Date.now(), lastSaved:Date.now(), siteLive:true, gallerySeeded:true },
 
   /* The service menu, taken verbatim from performance.html and
      services.html. All real - edit the copy here and it changes once. */

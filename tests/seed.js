@@ -88,6 +88,44 @@ const table=(u)=>String(u).split('/rest/v1/')[1].split('?')[0];
   Cloud._seeding=false;
   t('no runaway growth',()=>{ if(r.calls.length>first+2) throw new Error('extra calls: '+(r.calls.length-first)); });
 
+  /* The live database carried a gallery row holding an empty list, which
+     hard-replaced the built-in library on every pull. The manager was then
+     permanently empty however many photos and videos the website had. */
+  console.log('\n=== EMPTY GALLERY ROW does not wipe the built-in library ===');
+  const pullWith = (settings) => boot((u,o)=>{
+    if(u.includes('rpc/is_owner')) return ok(true);
+    if(u.includes('/rest/v1/site_settings')) return o.method==='POST'? ok([]) : ok(settings);
+    if(u.includes('/rest/v1/services'))      return o.method==='POST'? ok([]) : ok([{id:'s_x'}]);
+    if(u.includes('/rest/v1/')) return o.method==='POST'? ok([]) : ok([]);
+    return ok({});
+  });
+
+  r=await pullWith([{key:'gallery',value:{list:[]}}]);
+  ({Cloud,Store}=r.w.VenomPortal);
+  Cloud.setSession({access_token:'x',refresh_token:'y',email:'o@x.com',at:Date.now()});
+  await Cloud.pullAll({force:true});
+  t('empty row keeps the library',()=>{ const n=Store.list('gallery').length;
+    if(n<40) throw new Error('only '+n+' items'); });
+  t('videos survive too',()=>{ const v=Store.list('gallery').filter(g=>g.type==='video').length;
+    if(!v) throw new Error('no videos'); });
+  t('backfill is recorded',()=>{ if(!Store.data.meta.gallerySeeded) throw new Error('flag not set'); });
+
+  console.log('\n=== a real list from the database still wins ===');
+  r=await pullWith([{key:'gallery',value:{list:[{id:'g1',url:'a.jpg',type:'image',label:'Only One'}]}}]);
+  ({Cloud,Store}=r.w.VenomPortal);
+  Cloud.setSession({access_token:'x',refresh_token:'y',email:'o@x.com',at:Date.now()});
+  await Cloud.pullAll({force:true});
+  t('stored list replaces the seed',()=>{ const g=Store.list('gallery');
+    if(g.length!==1||g[0].label!=='Only One') throw new Error(g.length+' items'); });
+
+  console.log('\n=== once recorded, an emptied gallery stays empty ===');
+  r=await pullWith([{key:'gallery',value:{list:[]}},{key:'meta',value:{gallerySeeded:true}}]);
+  ({Cloud,Store}=r.w.VenomPortal);
+  Cloud.setSession({access_token:'x',refresh_token:'y',email:'o@x.com',at:Date.now()});
+  await Cloud.pullAll({force:true});
+  t('deliberate removal respected',()=>{ const n=Store.list('gallery').length;
+    if(n!==0) throw new Error(n+' items came back'); });
+
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 })();
