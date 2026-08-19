@@ -1094,7 +1094,10 @@ const BUSINESS = {
     address:'58 Industrial Crescent, eMalahleni, 1034, Mpumalanga',
     mapsUrl:'https://www.google.com/maps?q=58+Industrial+Crescent,+eMalahleni,+1034,+South+Africa',
     tuningPortal:'https://venomperformance.tuningfileportal.com/',
-    googleReviews:'https://maps.app.goo.gl/HpCtPxiZec25Rqi1A?g_st=ic'
+    googleReviews:'https://maps.app.goo.gl/HpCtPxiZec25Rqi1A?g_st=ic',
+    /* Read from the Google Business Profile on 19 Aug 2026. Editable in
+       the portal - it will drift as new reviews come in. */
+    googleRating:'4.6'
   },
 
   copy:{
@@ -2135,7 +2138,51 @@ const SEED = () => ({
     ctaBtnText:BUSINESS.copy.ctaBtnText, ctaBtnLink:BUSINESS.copy.ctaBtnLink,
   },
 
-  gallery:[],
+  gallery:[
+    { id:'g_gp-exhaust-1', url:'assets/images/gallery/gp-exhaust-1.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-1', url:'assets/videos/gallery/gp-dyno-1.mp4', type:'video', category:'Dyno Testing', label:'Dyno Run', alt:'Dyno Run' },
+    { id:'g_gp-exhaust-2', url:'assets/images/gallery/gp-exhaust-2.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-2', url:'assets/videos/gallery/gp-dyno-2.mp4', type:'video', category:'Dyno Testing', label:'Dyno Run', alt:'Dyno Run' },
+    { id:'g_gp-exhaust-3', url:'assets/images/gallery/gp-exhaust-3.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-3', url:'assets/videos/gallery/gp-dyno-3.mp4', type:'video', category:'Dyno Testing', label:'Audi Dyno Run', alt:'Audi Dyno Run' },
+    { id:'g_gp-exhaust-4', url:'assets/images/gallery/gp-exhaust-4.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-4', url:'assets/videos/gallery/gp-dyno-4.mp4', type:'video', category:'Dyno Testing', label:'Audi Dyno Run', alt:'Audi Dyno Run' },
+    { id:'g_gp-exhaust-5', url:'assets/images/gallery/gp-exhaust-5.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-5', url:'assets/videos/gallery/gp-dyno-5.mp4', type:'video', category:'Dyno Testing', label:'Dyno Run', alt:'Dyno Run' },
+    { id:'g_gp-exhaust-6', url:'assets/images/gallery/gp-exhaust-6.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-6', url:'assets/videos/gallery/gp-dyno-6.mp4', type:'video', category:'Dyno Testing', label:'Dyno Run', alt:'Dyno Run' },
+    { id:'g_gp-exhaust-7', url:'assets/images/gallery/gp-exhaust-7.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-7', url:'assets/videos/gallery/gp-dyno-7.mp4', type:'video', category:'Dyno Testing', label:'Mercedes Dyno Run', alt:'Mercedes Dyno Run' },
+    { id:'g_gp-exhaust-8', url:'assets/images/gallery/gp-exhaust-8.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-dyno-8', url:'assets/videos/gallery/gp-dyno-8.mp4', type:'video', category:'Dyno Testing', label:'Swift Dyno Run', alt:'Swift Dyno Run' },
+    { id:'g_gp-exhaust-9', url:'assets/images/gallery/gp-exhaust-9.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-exhaust-v1', url:'assets/videos/gallery/gp-exhaust-v1.mp4', type:'video', category:'Exhaust Systems', label:'Pops and Bangs', alt:'Pops and Bangs' },
+    { id:'g_gp-exhaust-10', url:'assets/images/gallery/gp-exhaust-10.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-exhaust-v2', url:'assets/videos/gallery/gp-exhaust-v2.mp4', type:'video', category:'Exhaust Systems', label:'Exhaust Fabrication', alt:'Exhaust Fabrication' },
+    { id:'g_gp-exhaust-11', url:'assets/images/gallery/gp-exhaust-11.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-exhaust-12', url:'assets/images/gallery/gp-exhaust-12.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-exhaust-v3', url:'assets/videos/gallery/gp-exhaust-v3.mp4', type:'video', category:'Exhaust Systems', label:'Exhaust Fabrication', alt:'Exhaust Fabrication' },
+    { id:'g_gp-exhaust-v4', url:'assets/videos/gallery/gp-exhaust-v4.mp4', type:'video', category:'Exhaust Systems', label:'Exhaust Fabrication', alt:'Exhaust Fabrication' },
+    { id:'g_gp-exhaust-13', url:'assets/images/gallery/gp-exhaust-13.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
+    { id:'g_gp-workshop-1', url:'assets/videos/gallery/gp-workshop-1.mp4', type:'video', category:'Workshop', label:'Inside the Workshop', alt:'Inside the Workshop' },
+    { id:'g_gp-build-1', url:'assets/images/gallery/gp-build-1.jpg', type:'image', category:'Performance Builds', label:'Performance Build', alt:'Performance Build — Venom Racing' },
+    { id:'g_gp-workshop-2', url:'assets/videos/gallery/gp-workshop-2.mp4', type:'video', category:'Workshop', label:'Office Tour', alt:'Office Tour' },
+    { id:'g_gp-build-2', url:'assets/images/gallery/gp-build-2.jpg', type:'image', category:'Performance Builds', label:'Stage 3 Build', alt:'Stage 3 Build — Venom Racing' },
+    { id:'g_gp-workshop-3', url:'assets/videos/gallery/gp-workshop-3.mp4', type:'video', category:'Workshop', label:'Workshop Walkthrough', alt:'Workshop Walkthrough' },
+    { id:'g_gp-build-3', url:'assets/images/gallery/gp-build-3.jpg', type:'image', category:'Performance Builds', label:'Stage 3 Conversion', alt:'Stage 3 Conversion — Venom Racing' },
+    { id:'g_gp-tuning-1', url:'assets/videos/gallery/gp-tuning-1.mp4', type:'video', category:'ECU Calibration', label:'ECU Tuning', alt:'ECU Tuning' },
+    { id:'g_gp-ecu-1', url:'assets/images/gallery/gp-ecu-1.jpg', type:'image', category:'ECU Calibration', label:'ECU Remapping', alt:'ECU Remapping — Venom Racing' },
+    { id:'g_gp-build-v1', url:'assets/videos/gallery/gp-build-v1.mp4', type:'video', category:'Performance Builds', label:'Performance Build', alt:'Performance Build' },
+    { id:'g_gp-upgrade-1', url:'assets/images/gallery/gp-upgrade-1.jpg', type:'image', category:'Turbo Upgrades', label:'Performance Upgrade', alt:'Performance Upgrade — Venom Racing' },
+    { id:'g_gp-service-1', url:'assets/videos/gallery/gp-service-1.mp4', type:'video', category:'Services & Repairs', label:'Diagnostics', alt:'Diagnostics' },
+    { id:'g_gp-upgrade-2', url:'assets/images/gallery/gp-upgrade-2.jpg', type:'image', category:'Turbo Upgrades', label:'Performance Upgrade', alt:'Performance Upgrade — Venom Racing' },
+    { id:'g_gp-service-2', url:'assets/videos/gallery/gp-service-2.mp4', type:'video', category:'Services & Repairs', label:'Diagnostics', alt:'Diagnostics' },
+    { id:'g_gp-upgrade-3', url:'assets/images/gallery/gp-upgrade-3.jpg', type:'image', category:'Turbo Upgrades', label:'Performance Upgrade', alt:'Performance Upgrade — Venom Racing' },
+    { id:'g_gp-service-3', url:'assets/videos/gallery/gp-service-3.mp4', type:'video', category:'Services & Repairs', label:'Servicing', alt:'Servicing' },
+    { id:'g_gp-upgrade-4', url:'assets/images/gallery/gp-upgrade-4.jpg', type:'image', category:'Turbo Upgrades', label:'Performance Upgrade', alt:'Performance Upgrade — Venom Racing' },
+    { id:'g_gp-upgrade-5', url:'assets/images/gallery/gp-upgrade-5.jpg', type:'image', category:'Turbo Upgrades', label:'Performance Upgrade', alt:'Performance Upgrade — Venom Racing' },
+    { id:'g_gp-engine-1', url:'assets/images/gallery/gp-engine-1.jpg', type:'image', category:'Services & Repairs', label:'Engine Rebuild', alt:'Engine Rebuild — Venom Racing' }
+  ],
 
   /* The 11 genuine Google reviews carried on reviews.html, verbatim.
      Not demo data - these are real, so they carry no Sample badge.
@@ -2174,6 +2221,7 @@ const SEED = () => ({
     address:BUSINESS.contact.address,
     mapsUrl:BUSINESS.contact.mapsUrl,
     tuningPortal:BUSINESS.contact.tuningPortal,
+    googleRating:BUSINESS.contact.googleRating,
     /* Monday to Friday 08:00-17:00, exactly as the site's structured data
        and FAQ both state. The site claims no weekend hours. */
     hours:[
@@ -3354,63 +3402,128 @@ Portal.register({
    MODULE: Gallery
    ================================================================== */
 Portal.register({
-  id:'gallery', title:'Gallery Manager', sub:'Photos on your gallery page', icon:'image', group:'Proof of work', instant:true,
+  id:'gallery', title:'Gallery Manager', sub:'Photos and videos on your gallery page', icon:'image', group:'Website', instant:true,
   badge(st){ return st.gallery ? {text:String(st.gallery),mut:true} : null; },
+  state:{ filter:'all' },
   render(){
-    const list = Store.list('gallery');
+    const s = this.state;
+    const all = Store.list('gallery');
     const cats = BUSINESS.vocab.galleryCats;
+    const counts = { all:all.length, image:all.filter(g=>g.type!=='video').length, video:all.filter(g=>g.type==='video').length };
+    const list = s.filter==='all' ? all
+               : s.filter==='image' ? all.filter(g=>g.type!=='video')
+               : s.filter==='video' ? all.filter(g=>g.type==='video')
+               : all.filter(g=>g.category===s.filter);
+
     return `
-    ${H.head('Gallery Manager','Photos shown on your gallery page. Each one belongs to a category so the filters on the website work.',
-      `<button class="btn btn-dan" data-act="clear">${ICON.trash} Remove all</button>`)}
-    ${H.card('Gallery images','Up to 30 images. Drag any image to change the order.','<div id="galUp"></div>')}
-    <div style="height:14px"></div>
-    ${list.length ? H.card('Captions and categories','Sets which website filter each image appears under',`
-      <div class="grid" style="gap:8px">
-        ${list.map((g,i)=>`
-          <div class="row" style="gap:10px;align-items:center">
-            <img src="${U.esc(g.url||g)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:var(--r-xs);flex-shrink:0">
-            <input class="inp" data-gl="${i}" value="${U.esc(g.label||'')}" placeholder="Caption" style="flex:1;min-width:0" aria-label="Caption for image ${i+1}">
-            <select class="sel" data-gc="${i}" style="max-width:210px" aria-label="Category for image ${i+1}">
+    ${H.head('Gallery Manager','Everything on your gallery page. Remove what you no longer want, reorder it, and add photos or videos.',
+      `<button class="btn" data-act="addvideo">${ICON.plus} Add video</button>
+       <button class="btn btn-pri" data-act="addimage">${ICON.upload} Upload photos</button>`)}
+
+    <div class="segbar" style="margin-bottom:14px">
+      <button data-gf="all" class="${s.filter==='all'?'on':''}">All<span class="n">${counts.all}</span></button>
+      <button data-gf="image" class="${s.filter==='image'?'on':''}">Photos<span class="n">${counts.image}</span></button>
+      <button data-gf="video" class="${s.filter==='video'?'on':''}">Videos<span class="n">${counts.video}</span></button>
+      ${cats.filter(c=>c!=='Videos'&&all.some(g=>g.category===c)).map(c=>
+        `<button data-gf="${U.esc(c)}" class="${s.filter===c?'on':''}">${U.esc(c)}<span class="n">${all.filter(g=>g.category===c).length}</span></button>`).join('')}
+    </div>
+
+    <div id="galUp" style="margin-bottom:14px"></div>
+
+    ${list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px" data-grt>
+      ${list.map(g=>`
+        <div class="card" data-id="${U.esc(g.id)}" style="box-shadow:none;background:var(--glass)">
+          <div style="position:relative">
+            ${g.type==='video'
+              ? `<video src="${U.esc(g.url)}" muted playsinline preload="metadata" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0;background:#000"></video>`
+              : `<img src="${U.esc(g.url)}" alt="${U.esc(g.alt||g.label||'')}" loading="lazy" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0">`}
+            <span class="chip ${g.type==='video'?'acc':''}" style="position:absolute;top:8px;left:8px">${g.type==='video'?ICON.eye+' Video':ICON.image+' Photo'}</span>
+            <span class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab">${ICON.grip}</span>
+          </div>
+          <div class="card-b tight">
+            <input class="inp" data-gl="${U.esc(g.id)}" value="${U.esc(g.label||'')}" placeholder="Caption" aria-label="Caption" style="margin-bottom:6px">
+            <select class="sel" data-gc="${U.esc(g.id)}" aria-label="Category">
               ${cats.map(c=>`<option value="${U.esc(c)}" ${g.category===c?'selected':''}>${U.esc(c)}</option>`).join('')}
             </select>
-          </div>`).join('')}
-      </div>`) : ''}
+            <div class="row" style="margin-top:8px;gap:6px">
+              <button class="btn btn-sm" data-gact="preview" data-id="${U.esc(g.id)}" aria-label="Preview" title="Preview">${ICON.eye}</button>
+              <button class="btn btn-sm btn-dan" data-gact="del" data-id="${U.esc(g.id)}" aria-label="Remove from website" title="Remove">${ICON.trash}</button>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div style="margin-top:16px;text-align:center;color:var(--text-3);font-size:12.5px">Showing ${list.length} of ${counts.all} items · drag any tile to reorder</div>`
+    : H.empty('image','Nothing in this filter','Upload a photo or add a video and it appears on your gallery page.')}
+
     <div style="height:14px"></div>
     ${H.card('How this works','',`
       <div class="grid" style="gap:10px">
-        <div class="note">${ICON.info}<div>Images appear on your gallery page under the category you pick. Until you add any, the page keeps the photos already built into it.</div></div>
+        <div class="note">${ICON.info}<div>This list <b>is</b> your gallery page. Removing an item here removes it from the website. Photos upload straight to your media storage; videos are added by their address because video files are too large to upload through a browser form.</div></div>
         <div class="note ok">${ICON.check}<div>Large photos are resized automatically so the page stays fast on mobile data.</div></div>
       </div>`)}`;
   },
   mount(root){
+    const s = this.state;
+    U.on(root,'click','[data-gf]',(e,b)=>{ s.filter=b.dataset.gf; Router.refresh(); });
+
+    /* Uploader kept hidden until asked for: the grid below is the real
+       interface now that every existing item is managed here. */
     UI.uploader(U.el('#galUp',root),{
-      max:30, images:Store.list('gallery').map(g=>g.url||g), square:true, bucket:BUSINESS.buckets.gallery,
+      max:60, images:Store.list('gallery').filter(g=>g.type!=='video').map(g=>g.url), square:true,
+      bucket:BUSINESS.buckets.gallery,
       label:'Drop photos here or tap to browse',
       hint:'You can select several at once.',
-      onChange:v=>{
-        /* Keep the caption and category already set for an image. */
-        const prev = {}; Store.list('gallery').forEach(g=>{ if(g && g.url) prev[g.url]=g; });
-        Store.data.gallery = v.map(url => prev[url] || { url, category:BUSINESS.vocab.galleryCats[0], label:'' });
+      onChange:urls=>{
+        const byUrl = {}; Store.list('gallery').forEach(g=>{ byUrl[g.url]=g; });
+        const videos = Store.list('gallery').filter(g=>g.type==='video');
+        const images = urls.map(url => byUrl[url] || { id:U.id('g'), url, type:'image',
+          category:BUSINESS.vocab.galleryCats[0], label:'', alt:'' });
+        Store.data.gallery = images.concat(videos);
         Store.persist();
-        Store.log('Gallery updated',v.length+' images in your gallery','image');
-        Router.paintBadges();
-        Router.refresh();
+        Store.log('Gallery updated',Store.data.gallery.length+' items','image');
+        Router.paintBadges(); Router.refresh();
       }
     });
+
+    U.on(root,'click','[data-act="addimage"]',()=>{
+      const drop = U.el('#galUp [data-pick]',root) || U.el('#galUp',root);
+      if(drop) drop.scrollIntoView({behavior:'smooth',block:'center'});
+      UI.toast('info','Upload photos','Use the drop area at the top of this page.');
+    });
+    U.on(root,'click','[data-act="addvideo"]',()=>Modules.galleryVideoForm());
+
+    U.on(root,'click','[data-gact]',async(e,b)=>{
+      const g = Store.find('gallery',b.dataset.id);
+      if(!g) return;
+      if(b.dataset.gact==='preview'){
+        if(g.type==='video') return window.open(g.url,'_blank','noopener');
+        return UI.lightbox(g.url);
+      }
+      if(await UI.confirm({title:'Remove from your gallery?',
+          message:(g.label||'This item')+' is removed from your gallery page. The file itself is not deleted.',
+          confirmText:'Remove'})){
+        Store.remove('gallery',g.id);
+        Store.log('Gallery item removed',g.label||g.url,'trash','dan');
+        Router.refresh(); Router.paintBadges(); UI.toast('ok','Removed','');
+      }
+    });
+
     U.on(root,'change','[data-gc]',(e,el)=>{
-      const g = Store.data.gallery[Number(el.dataset.gc)];
+      const g = Store.find('gallery',el.dataset.gc);
       if(g){ g.category = el.value; Store.persist(); UI.toast('ok','Category updated',g.category); }
     });
     U.on(root,'input','[data-gl]',U.debounce((e,el)=>{
-      const g = Store.data.gallery[Number(el.dataset.gl)];
+      const g = Store.find('gallery',el.dataset.gl);
       if(g){ g.label = el.value; Store.persist(); }
     },450));
-    U.on(root,'click','[data-act="clear"]',async()=>{
-      if(await UI.confirm({title:'Remove every gallery image?',message:'All images are removed from your gallery page. Your website keeps the photos built into it.',confirmText:'Remove all'})){
-        Store.data.gallery=[]; Store.persist();
-        Store.log('Gallery cleared','All images removed','trash','dan');
-        Router.refresh(); Router.paintBadges();
-      }
+
+    const box = U.el('[data-grt]',root);
+    if(box) UI.sortable(box,'.card',ids=>{
+      const map = {}; Store.list('gallery').forEach(g=>map[g.id]=g);
+      const moved = ids.map(id=>map[id]).filter(Boolean);
+      const rest = Store.list('gallery').filter(g=>ids.indexOf(g.id)<0);
+      Store.data.gallery = moved.concat(rest);
+      Store.persist(); UI.toast('ok','Order updated','Gallery reordered');
     });
   }
 });
@@ -3650,6 +3763,9 @@ Portal.register({
             ${H.field('Street address',H.ta('address',c.address,'546 Rachel de Beer St, Pretoria North',2))}
             ${H.field('Google Maps link',H.input('mapsUrl',c.mapsUrl,BUSINESS.contact.mapsUrl),'Paste the share link from Google Maps. This powers the map and the directions button.')}
           </div>`)}
+        ${H.card('Google rating','The score shown on your homepage and reviews page',`
+          ${H.field('Rating out of 5',H.input('googleRating',c.googleRating,BUSINESS.contact.googleRating),
+            'Read this off your Google Business Profile. It drifts as new reviews come in, so check it now and then.')}`)}
         ${H.card('Social media','Leave a field empty to hide that icon',`
           <div class="grid" style="gap:12px">
             ${H.field('Facebook page',H.input('social.facebook',c.social.facebook,'https://facebook.com/...'))}
@@ -3679,6 +3795,7 @@ Portal.register({
             <div class="kv-row"><span>${ICON.whatsapp} WhatsApp</span><b>${U.esc(c.whatsapp||'Not set')}</b></div>
             <div class="kv-row"><span>${ICON.mail} Email</span><b style="word-break:break-all">${U.esc(c.email||'Not set')}</b></div>
             <div class="kv-row" style="align-items:flex-start"><span>${ICON.pin} Address</span><b>${U.esc(c.address||'Not set')}</b></div>
+            <div class="kv-row"><span>${ICON.star} Google rating</span><b>${c.googleRating?U.esc(c.googleRating)+' out of 5':'Not set'}</b></div>
             <div class="sep" style="margin:6px 0"></div>
             ${c.hours.map(h=>`<div class="kv-row"><span>${h.day}</span><b>${h.closed?'Closed':h.open+' to '+h.close}</b></div>`).join('')}
           </div>`)}
@@ -4833,6 +4950,34 @@ const Modules = {
       else{ Store.insert('pageSections',draft); Store.log('Section added',draft.title,'layers','ok'); }
       Store.persist(true); m.close(); Router.refresh();
       UI.toast('ok',editing?'Item saved':'Item added',draft.title);
+    });
+  },
+
+  galleryVideoForm(){
+    const draft = { id:U.id('g'), url:'', type:'video', category:BUSINESS.vocab.galleryCats[0], label:'', alt:'' };
+    const m = UI.modal({
+      size:'md', title:'Add a video', sub:'Videos are added by address rather than uploaded.',
+      body:`<div class="grid" style="gap:14px">
+        ${H.field('Video address',H.input('url',draft.url,'assets/videos/gallery/my-clip.mp4'),'Either a path inside your website, or a full https:// address.')}
+        ${H.field('Caption',H.input('label',draft.label,'Dyno Run'))}
+        ${H.field('Category',H.sel('category',draft.category,BUSINESS.vocab.galleryCats,'Category'))}
+        <div class="note">${ICON.info}<div>Video files are far too large to upload through a browser form. Put the file alongside your website's other videos, then paste its path here.</div></div>
+      </div>`,
+      footer:`<button class="btn" data-close>Cancel</button>
+              <div class="sp"><button class="btn btn-pri" data-save>${ICON.check} Add video</button></div>`
+    });
+    H.bind(m.el,(k,v)=>draft[k]=v,()=>{});
+    U.el('[data-save]',m.el).addEventListener('click',()=>{
+      const u = (draft.url||'').trim();
+      if(!u) return UI.toast('err','An address is needed','Paste the path to the video file.');
+      if(!/\.(mp4|webm|mov)(\?|$)/i.test(u)) return UI.toast('err','That does not look like a video','It should end in .mp4, .webm or .mov.');
+      draft.url = u;
+      draft.alt = draft.label;
+      Store.insert('gallery',draft);
+      Store.persist(true);
+      Store.log('Gallery video added',draft.label||u,'image','ok');
+      m.close(); Router.refresh(); Router.paintBadges();
+      UI.toast('ok','Video added',draft.label||'It now appears on your gallery page');
     });
   },
 

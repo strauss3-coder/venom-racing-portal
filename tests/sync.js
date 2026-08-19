@@ -22,6 +22,7 @@ function run(page, mode){
             whatsapp:'+27 11 555 1234',
             email:'new@venomracing.co.za', email2:'second@venomracing.co.za',
             address:'99 New Road, Middelburg, 1050, Mpumalanga',
+            googleRating:'4.9',
             hours:[{day:'Monday',open:'07:30',close:'18:00',closed:false},
                    {day:'Tuesday',open:'07:30',close:'18:00',closed:false},
                    {day:'Wednesday',open:'07:30',close:'18:00',closed:false},
@@ -69,6 +70,10 @@ function run(page, mode){
      if(e.textContent!=='Monday – Friday, 07:30 – 18:00 · Saturday, 08:00 – 12:00') throw new Error(e.textContent);});
   t('label not destroyed', ()=>{const p=d.querySelector('[data-vr-hours]').parentElement;
      if(!/Hours:/.test(p.textContent)) throw new Error('lost the <strong> label');});
+  t('google rating updated',()=>{const e=d.querySelector('[data-vr-rating]');
+     if(e.textContent!=='4.9') throw new Error(e.textContent);});
+  t('rating wording kept', ()=>{const p=d.querySelector('[data-vr-rating]').parentElement;
+     if(!/out of 5 on Google/.test(p.textContent)) throw new Error(p.textContent);});
 
   console.log('\n=== FALLBACK: nothing may be blanked ===');
   for(const mode of ['down','empty','http500']){
@@ -79,6 +84,8 @@ function run(page, mode){
        if(a.getAttribute('href')!=='mailto:venom@venomracing.co.za') throw new Error(a.getAttribute('href'));});
     t('['+mode+'] hours intact',  ()=>{const e=f.querySelector('[data-vr-hours]');
        if(!/Monday – Friday, 08:00 – 17:00/.test(e.textContent)) throw new Error(e.textContent);});
+    t('['+mode+'] rating intact',()=>{const e=f.querySelector('[data-vr-rating]');
+       if(e.textContent!=='4.6') throw new Error(e.textContent);});
   }
 
   console.log('\n=== other pages hydrate too ===');
@@ -87,6 +94,9 @@ function run(page, mode){
      if(a.getAttribute('href')!=='tel:+27115551234') throw new Error(a.getAttribute('href'));});
   t('contact.html email', ()=>{const a=c.querySelector('a[href^="mailto:"]');
      if(a.getAttribute('href')!=='mailto:new@venomracing.co.za') throw new Error(a.getAttribute('href'));});
+  const r=await run('reviews.html','ok');
+  t('reviews.html rating',()=>{const e=r.querySelector('[data-vr-rating]');
+     if(e.textContent!=='4.9') throw new Error(e.textContent);});
 
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);

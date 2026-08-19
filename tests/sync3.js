@@ -6,8 +6,9 @@ const DATA={'site_settings':[
      btn1Text:'Portal Btn One',btn1Link:'a.html',btn2Text:'Portal Btn Two',btn2Link:'b.html',
      aboutTitle:'Portal About Title',aboutText:'Portal about paragraph.',ctaTitle:'Portal CTA?'}},
   {key:'gallery',value:{list:[
-     {url:'assets/images/gallery/gp-exhaust-1.jpg',label:'Portal Exhaust',category:'Exhaust Systems'},
-     {url:'assets/images/gallery/gp-build-1.jpg',label:'Portal Build',category:'Performance Builds'}]}}
+     {id:'g1',url:'assets/images/gallery/gp-exhaust-1.jpg',type:'image',label:'Portal Exhaust',category:'Exhaust Systems'},
+     {id:'g2',url:'assets/images/gallery/gp-build-1.jpg',type:'image',label:'Portal Build',category:'Performance Builds'},
+     {id:'g3',url:'assets/videos/gallery/gp-dyno-1.mp4',type:'video',label:'Portal Dyno Clip',category:'Dyno Testing'}]}}
 ]};
 function run(page,mode){return new Promise(res=>{
   const html=fs.readFileSync(PATH_.join(SITE,page),'utf8');
@@ -58,8 +59,20 @@ function run(page,mode){return new Promise(res=>{
   w=await run('gallery.html','ok'); d=w.document;
   t('grid replaced',()=>{const c=[...d.querySelectorAll('.gallery-card__title')].map(x=>x.textContent);
     if(!c.includes('Portal Exhaust')) throw new Error(c.slice(0,3).join('|'));});
-  t('two items only',()=>{const n=d.querySelectorAll('[data-gallery-item]').length;
-    if(n!==2) throw new Error(n+' items');});
+  t('three items only',()=>{const n=d.querySelectorAll('[data-gallery-item]').length;
+    if(n!==3) throw new Error(n+' items');});
+  t('video rendered as a video card',()=>{const el=d.querySelector('[data-label="Portal Dyno Clip"]');
+    if(!el) throw new Error('missing');
+    if(el.getAttribute('data-type')!=='video') throw new Error('type='+el.getAttribute('data-type'));
+    if(!el.querySelector('video source[data-src]')) throw new Error('no lazy source');});
+  t('video carries the videos filter key',()=>{const el=d.querySelector('[data-label="Portal Dyno Clip"]');
+    if(!/\bvideos\b/.test(el.getAttribute('data-cats'))) throw new Error(el.getAttribute('data-cats'));});
+  t('videos filter shows it',()=>{
+    const btn=[...d.querySelectorAll('[data-filter]')].find(b=>b.dataset.filter==='videos');
+    btn.dispatchEvent(new (d.defaultView.MouseEvent)('click',{bubbles:true}));
+    const shown=[...d.querySelectorAll('[data-gallery-item]')].filter(x=>!x.hidden);
+    if(shown.length!==1) throw new Error(shown.length+' shown');
+    if(shown[0].getAttribute('data-label')!=='Portal Dyno Clip') throw new Error('wrong item');});
   t('category mapped to filter key',()=>{const el=d.querySelector('[data-label="Portal Build"]');
     if(el.getAttribute('data-cats')!=='builds') throw new Error(el.getAttribute('data-cats'));});
   t('cards visible (reveal re-armed)',()=>{const h=[...d.querySelectorAll('.gallery-card')].filter(x=>!x.classList.contains('is-in'));
@@ -82,7 +95,7 @@ function run(page,mode){return new Promise(res=>{
   d=(await run('index.html','down')).document;
   t('hero copy intact',()=>{if(!/Where Performance/.test(d.querySelector('[data-vr-hero-title]').textContent)) throw new Error('lost');});
   d=(await run('gallery.html','down')).document;
-  t('all 42 gallery items intact',()=>{const n=d.querySelectorAll('[data-gallery-item]').length;
+  t('all 43 gallery items intact',()=>{const n=d.querySelectorAll('[data-gallery-item]').length;
     if(n<40) throw new Error('only '+n+' items');});
 
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
