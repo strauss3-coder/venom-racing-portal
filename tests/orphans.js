@@ -24,6 +24,8 @@ keys.forEach(k=>{
 console.log('\n=== DATABASE TABLES: each must back something ===');
 const tables=[...schema.matchAll(/create table if not exists public\.(\w+)/g)].map(m=>m[1]);
 const INFRA={site_settings:'settings documents',activity_log:'portal activity feed',
+             page_sections:'repeated card lists, read via website_sections',
+             seo:'per-page meta, read via website_seo',
              portal_owners:'owner allowlist',enquiries:'website enquiry inbox'};
 tables.forEach(tb=>{
   if(INFRA[tb]){ console.log('  ok   '+tb.padEnd(14)+INFRA[tb]); return; }

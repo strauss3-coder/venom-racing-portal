@@ -1,7 +1,8 @@
 const { chromium } = require('playwright');
 const BASE = process.env.PORTAL_URL || 'http://127.0.0.1:8100/index.html';
-const MODULES = ['dashboard','services','stages','products','faqs','homepage','gallery',
-                 'testimonials','contact','enquiries','appearance','settings','database'];
+const MODULES = ['dashboard','services','stages','products','faqs','sections','seo','media',
+                 'homepage','gallery','testimonials','contact','enquiries','appearance',
+                 'settings','database'];
 let bad = 0, consoleErrors = [], pageErrors = [];
 const t = (n, cond, detail) => {
   if (cond) console.log('    ok   ' + n);

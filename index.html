@@ -1068,6 +1068,16 @@ const BUSINESS = {
     /* Exactly the options in the website's contact.html service dropdown,
        so an enquiry arrives with a value the portal already knows. */
     serviceOptions:['Performance Upgrade','ECU Calibration','Dyno Tuning','Turbo Upgrade','Exhaust System','Vehicle Service','Mechanical Repairs','General Enquiry'],
+    /* The website's own pages, by filename without the extension. */
+    pages:['index','performance','services','about','gallery','reviews','faqs','contact','privacy','terms'],
+    /* Repeated card lists the website renders, and where each appears. */
+    sectionTypes:[
+      { v:'feature',    l:'Why choose us cards',  where:'Homepage, Services and About' },
+      { v:'process',    l:'Process steps',        where:'Homepage, Performance and Services' },
+      { v:'trust',      l:'Trust bar items',      where:'Homepage and Reviews' },
+      { v:'chip',       l:'Technology chips',     where:'About' },
+      { v:'specialise', l:'What we specialise in',where:'About' }
+    ],
     /* Enquiry pipeline. `unread` and `contacted` are the framework's;
        `quoted` and `booked` reflect how a workshop actually works. */
     enquiryStatuses:['unread','contacted','quoted','booked','completed']
@@ -1244,6 +1254,23 @@ const U = {
   clamp:(n,a,b)=>Math.min(b,Math.max(a,n)),
   el(sel,root){ return (root||document).querySelector(sel); },
   els(sel,root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); },
+  copy(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).catch(()=>U.copyFallback(text));
+    }
+    return Promise.resolve(U.copyFallback(text));
+  },
+  copyFallback(text){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    ta.remove();
+  },
+
   on(root,ev,sel,fn){
     root.addEventListener(ev,e=>{
       const t = e.target.closest(sel);
@@ -1387,6 +1414,28 @@ const MAP = {
     to:(b,i)=>({ id:b.id, name:b.name||'', logo:b.logo||'', url:b.url||'',
       active:!!b.active, sort_order:i||0, created_at:ISO(b.createdAt), updated_at:ISO(b.updatedAt) }),
     from:r=>({ id:r.id, name:r.name, logo:r.logo, url:r.url, active:r.active,
+      createdAt:MS(r.created_at), updatedAt:MS(r.updated_at) })
+  },
+  /* Repeated card lists across the site: why-choose cards, process steps,
+     trust-bar items, technology chips and the specialise grid. One table
+     rather than five, keyed by page and section. */
+  pageSections:{
+    table:'page_sections',
+    to:(x,i)=>({ id:x.id, page:x.page||'', section:x.section||'', title:x.title||'',
+      body:x.body||'', icon:x.icon||'', image:x.image||'', active:!!x.active, sort_order:i||0,
+      created_at:ISO(x.createdAt), updated_at:ISO(x.updatedAt) }),
+    from:r=>({ id:r.id, page:r.page, section:r.section, title:r.title, body:r.body,
+      icon:r.icon, image:r.image, active:r.active,
+      createdAt:MS(r.created_at), updatedAt:MS(r.updated_at) })
+  },
+  /* Per-page title, meta description and social preview. */
+  seo:{
+    table:'seo', bucket:BUSINESS.buckets.branding,
+    to:(x,i)=>({ id:x.id, page:x.page||'', title:x.title||'', description:x.description||'',
+      og_title:x.ogTitle||'', og_description:x.ogDescription||'', og_image:x.ogImage||'',
+      active:!!x.active, sort_order:i||0, created_at:ISO(x.createdAt), updated_at:ISO(x.updatedAt) }),
+    from:r=>({ id:r.id, page:r.page, title:r.title, description:r.description,
+      ogTitle:r.og_title, ogDescription:r.og_description, ogImage:r.og_image, active:r.active,
       createdAt:MS(r.created_at), updatedAt:MS(r.updated_at) })
   },
   /* faqs.html and the homepage FAQ preview. */
@@ -1613,6 +1662,17 @@ const Cloud = {
     for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
     return new Blob([arr],{type:mime});
   },
+  /* List a bucket's objects. Storage's list endpoint is a POST with a
+     prefix, so it needs its own call rather than the PostgREST helpers. */
+  async listBucket(bucket,prefix){
+    const rows = await this.raw('/storage/v1/object/list/'+bucket,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ prefix:prefix||'', limit:200, sortBy:{column:'created_at',order:'desc'} })
+    });
+    return Array.isArray(rows) ? rows : [];
+  },
+
   async uploadImage(bucket,dataUrl){
     const blob = this.dataUrlToBlob(dataUrl);
     const ext = (blob.type.split('/')[1]||'jpg').replace('jpeg','jpg');
@@ -1622,6 +1682,7 @@ const Cloud = {
     });
     return this.cfg.url+'/storage/v1/object/public/'+bucket+'/'+path;
   },
+  publicUrl(bucket,path){ return this.cfg.url+'/storage/v1/object/public/'+bucket+'/'+path; },
   isStored(url){ return this.on && typeof url==='string' && url.indexOf(this.cfg.url+'/storage/v1/object/public/')===0; },
   async removeImage(url){
     if(!this.isStored(url)) return;
@@ -1716,7 +1777,7 @@ const Cloud = {
       else if(row.key==='meta') Object.assign(next.meta,row.value||{});
       else if(next[row.key]) next[row.key] = Store._merge(next[row.key],row.value||{});
     });
-    for(const key of ['services','stages','products','brands','faqs','testimonials','enquiries','activity']){
+    for(const key of ['services','stages','products','brands','faqs','pageSections','seo','testimonials','enquiries','activity']){
       const m = MAP[key];
       const order = key==='activity' ? 'at.desc'
                   : key==='enquiries' ? 'created_at.desc'
@@ -1737,7 +1798,8 @@ const Cloud = {
   async liveCounts(){
     const map = {
       services:'website_services', stages:'website_stages', products:'website_products',
-      brands:'website_brands', faqs:'website_faqs', testimonials:'testimonials'
+      brands:'website_brands', faqs:'website_faqs', testimonials:'testimonials',
+      pageSections:'website_sections', seo:'website_seo'
     };
     const keys = Object.keys(map);
     const rows = await Promise.all(keys.map(k=>this.selectAll(map[k]).catch(()=>null)));
@@ -1767,13 +1829,13 @@ const Cloud = {
       if(owner !== true) return { skipped:'not-owner', owner };
 
       const probes = await Promise.all(
-        ['services','stages','products','brands','faqs','testimonials']
+        ['services','stages','products','brands','faqs','pageSections','seo','testimonials']
           .map(t=>this.selectAll(t).catch(()=>null))
       );
       const remoteRows = probes.reduce((n,r)=>n+((r&&r.length)||0),0);
       if(remoteRows > 0) return { skipped:'remote-has-content', remoteRows };
 
-      const localRows = ['services','stages','products','brands','faqs','testimonials']
+      const localRows = ['services','stages','products','brands','faqs','pageSections','seo','testimonials']
         .reduce((n,k)=>n+Store.list(k).filter(r=>!r.demo).length,0);
       if(!localRows) return { skipped:'nothing-local' };
 
@@ -1792,8 +1854,8 @@ const Cloud = {
     opts = opts||{};
     this.setStatus('syncing');
     const skipDemo = opts.includeSamples !== true;
-    const counts = { services:0, stages:0, products:0, brands:0, faqs:0, testimonials:0, enquiries:0 };
-    for(const key of ['services','stages','products','brands','faqs','testimonials','enquiries']){
+    const counts = { services:0, stages:0, products:0, brands:0, faqs:0, pageSections:0, seo:0, testimonials:0, enquiries:0 };
+    for(const key of ['services','stages','products','brands','faqs','pageSections','seo','testimonials','enquiries']){
       const m = MAP[key];
       const list = Store.list(key).filter(r=>!(skipDemo && r.demo));
       counts[key] = list.length;
@@ -1951,6 +2013,73 @@ const SEED = () => ({
     { id:'br_bnb-exhausts', name:'BNB Exhausts', logo:'', url:'', active:true, createdAt:Date.now() },
     { id:'br_f1-x', name:'F1-X', logo:'', url:'', active:true, createdAt:Date.now() },
     { id:'br_tnt', name:'TNT', logo:'', url:'', active:true, createdAt:Date.now() }
+  ],
+
+  pageSections:[
+    { id:'ps_about_feature_our-mission', page:'about', section:'feature', title:'Our Mission', body:'To deliver validated performance work that owners can trust — measured results, not marketing promises.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_feature_accreditation', page:'about', section:'feature', title:'Accreditation', body:'RMI Accredited, meeting manufacturer-level standards on tooling, safety and technician qualification.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_feature_master-tuner', page:'about', section:'feature', title:'Master Tuner', body:'In-house professional development and calibration of our own custom ECU and TCU staged software files.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_feature_in-house-craft', page:'about', section:'feature', title:'In-House Craft', body:'Fabrication of intercoolers, boost pipes, exhausts, manifolds and long-range tanks — TIG-welded aluminium and stainless steel — plus engine builds and other performance modifications, carried out on-site by our own skilled technicians.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_feature_rmi-accredited', page:'index', section:'feature', title:'RMI Accredited', body:'Manufacturer-level standards on tooling, safety and technician qualification.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_feature_remote-tuning-solutions', page:'index', section:'feature', title:'Remote Tuning Solutions', body:'We provide professional remote tuning solutions for workshops and performance specialists worldwide, delivering reliable calibrations backed by years of experience.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_feature_in-house-fabrication', page:'index', section:'feature', title:'In-House Fabrication', body:'Precision fabrication and performance work carried out on-site by our own skilled technicians — top-quality, guaranteed.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_feature_validated-results', page:'index', section:'feature', title:'Validated Results', body:'Every calibration is professionally validated on the dyno or V-Box, proven to ensure maximum performance, safety and long-term reliability. No \'load and go\' tuning — every vehicle gets data logged, tested and verified.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_feature_experienced-technicians', page:'services', section:'feature', title:'Experienced Technicians', body:'Skilled, experienced hands you can trust with any vehicle.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_feature_state-of-the-art-diagnostics', page:'services', section:'feature', title:'State-of-the-Art Diagnostics', body:'Modern computerised diagnostic equipment for accurate fault finding.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_feature_genuine-quality-parts', page:'services', section:'feature', title:'Genuine & Quality Parts', body:'Quality, fit-for-purpose replacement parts — no shortcuts.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_feature_honest-workmanship', page:'services', section:'feature', title:'Honest Workmanship', body:'Work done properly the first time, with integrity.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_feature_transparent-communication', page:'services', section:'feature', title:'Transparent Communication', body:'Clear updates and no surprises on your bill.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_feature_reliable-turnaround', page:'services', section:'feature', title:'Reliable Turnaround', body:'Your vehicle back to you when we promise.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_process_book-consultation', page:'index', section:'process', title:'Book Consultation', body:'Tell us about your vehicle and goals.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_process_vehicle-inspection', page:'index', section:'process', title:'Vehicle Inspection', body:'We assess the platform and current setup.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_process_custom-recommendation', page:'index', section:'process', title:'Custom Recommendation', body:'A tailored plan — software, hardware or fabrication to suit your needs.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_process_installation-tuning', page:'index', section:'process', title:'Installation / Tuning', body:'Work carried out in-house by our skilled technicians.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_process_testing-delivery', page:'index', section:'process', title:'Testing & Delivery', body:'Dyno-validated and/or V-Box results with data logging before handover.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_performance_process_book-consultation', page:'performance', section:'process', title:'Book Consultation', body:'Tell us about your vehicle and goals.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_performance_process_vehicle-inspection', page:'performance', section:'process', title:'Vehicle Inspection', body:'We assess the platform and current setup.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_performance_process_custom-recommendation', page:'performance', section:'process', title:'Custom Recommendation', body:'A tailored plan — software, hardware or fabrication to suit your needs.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_performance_process_installation-tuning', page:'performance', section:'process', title:'Installation / Tuning', body:'Work carried out in-house by our skilled technicians.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_performance_process_testing-delivery', page:'performance', section:'process', title:'Testing & Delivery', body:'Dyno-validated and/or V-Box results with data logging before handover.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_process_book-service', page:'services', section:'process', title:'Book Service', body:'Get in touch and schedule your visit.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_process_vehicle-inspection', page:'services', section:'process', title:'Vehicle Inspection', body:'A thorough look over your vehicle on arrival.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_process_diagnosis', page:'services', section:'process', title:'Diagnosis', body:'Computerised diagnostics to pinpoint the work needed.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_process_customer-approval', page:'services', section:'process', title:'Customer Approval', body:'We explain the work and costs before we start.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_process_repair-or-service', page:'services', section:'process', title:'Repair or Service', body:'Carried out by experienced technicians.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_process_quality-check', page:'services', section:'process', title:'Quality Check', body:'Every job checked before it leaves the workshop.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_services_process_vehicle-collection', page:'services', section:'process', title:'Vehicle Collection', body:'Back to you, running safely and reliably.', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_trust_verified-google-reviews', page:'index', section:'trust', title:'Verified Google Reviews', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_trust_26-years-of-experience', page:'index', section:'trust', title:'26+ Years of Experience', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_trust_rmi-accredited-dealer', page:'index', section:'trust', title:'RMI Accredited Dealer', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_index_trust_dastek-unichip-dealer', page:'index', section:'trust', title:'Dastek Unichip Dealer', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_reviews_trust_verified-google-reviews', page:'reviews', section:'trust', title:'Verified Google Reviews', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_reviews_trust_26-years-of-experience', page:'reviews', section:'trust', title:'26+ Years of Experience', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_reviews_trust_rmi-accredited-dealer', page:'reviews', section:'trust', title:'RMI Accredited Dealer', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_reviews_trust_dastek-unichip-dealer', page:'reviews', section:'trust', title:'Dastek Unichip Dealer', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_dastek-unichip', page:'about', section:'chip', title:'Dastek Unichip', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_dyno-validation', page:'about', section:'chip', title:'Dyno Validation', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_diagnostics', page:'about', section:'chip', title:'Diagnostics', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_data-logging', page:'about', section:'chip', title:'Data Logging', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_performance-hardware', page:'about', section:'chip', title:'Performance Hardware', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_winols-5', page:'about', section:'chip', title:'WinOLS 5', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_venom-performance-tuning-software', page:'about', section:'chip', title:'Venom Performance Tuning Software', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_chip_v-box', page:'about', section:'chip', title:'V-Box', body:'', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_specialise_ecu-calibration-remapping', page:'about', section:'specialise', title:'ECU Calibration & Remapping', body:'Master tuner of ECU and TCU software', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_specialise_performance-exhaust-systems', page:'about', section:'specialise', title:'Performance Exhaust Systems', body:'Custom-manufactured, precision-welded, premium finish', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_specialise_turbo-upgrades', page:'about', section:'specialise', title:'Turbo Upgrades', body:'Hybrid & big-turbo conversions with supported upgrades', icon:'', image:'', active:true, createdAt:Date.now() },
+    { id:'ps_about_specialise_bolt-on-hardware', page:'about', section:'specialise', title:'Bolt-on Hardware', body:'Exhausts, cold air induction, downpipes, intercoolers, dump valves, tail pipes, performance air filters, brakes', icon:'', image:'', active:true, createdAt:Date.now() }
+  ],
+
+  seo:[
+    { id:'seo_about', page:'about', title:'About Us | Venom Racing eMalahleni', description:'Venom Racing is an RMI Accredited performance workshop in eMalahleni, Mpumalanga — official Dastek Unichip dealer specialising in ECU remapping, dyno testing and exhaust fabrication.', ogTitle:'About Venom Racing', ogDescription:'RMI Accredited performance workshop in eMalahleni, Mpumalanga.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_contact', page:'contact', title:'Contact Us | Venom Racing eMalahleni', description:'Contact Venom Racing for ECU tuning, Dastek Unichip installs, exhaust fabrication and engine conversions. Call 082 852 0680 or request a quote online.', ogTitle:'Contact Venom Racing', ogDescription:'Get in touch with Venom Racing — phone, WhatsApp, email and workshop address.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_faqs', page:'faqs', title:'FAQs | Venom Racing eMalahleni', description:'Frequently asked questions about ECU tuning, Dastek Unichip installs, exhaust fabrication, engine conversions, warranty impact, and booking with Venom Racing.', ogTitle:'FAQs | Venom Racing', ogDescription:'Frequently asked questions about tuning, fabrication and booking.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_gallery', page:'gallery', title:'Gallery | Venom Racing eMalahleni', description:'Photos from inside the Venom Racing workshop — dyno testing, exhaust fabrication, ECU tuning and completed performance builds.', ogTitle:'Gallery | Venom Racing', ogDescription:'Photos from inside the Venom Racing performance workshop.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_index', page:'index', title:'Venom Racing | Performance ECU Tuning, Dyno &amp; Fabrication in eMalahleni', description:'Venom Racing is an RMI Accredited performance workshop in eMalahleni, Mpumalanga — official Dastek Unichip dealer specialising in ECU remapping, dyno testing, custom exhaust fabrication and turbo conversions.', ogTitle:'Venom Racing | Performance ECU Tuning, Dyno &amp; Fabrication', ogDescription:'RMI Accredited performance workshop in eMalahleni. Official Dastek Unichip dealer.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_performance', page:'performance', title:'Performance | Venom Racing eMalahleni', description:'Venom Racing\'s performance division — ECU calibration &amp; remapping, Dastek Unichip, dyno validation, performance exhausts, turbo upgrades, hybrid conversions, intercooler, fuel &amp; intake upgrades and custom performance packages.', ogTitle:'Performance | Venom Racing', ogDescription:'ECU calibration, dyno validation, performance exhausts, turbo upgrades, hybrid conversions and custom performance packages.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_privacy', page:'privacy', title:'Privacy Policy | Venom Racing', description:'Venom Racing\'s privacy policy — how we collect, use, and protect your personal information.', ogTitle:'Privacy Policy | Venom Racing', ogDescription:'Venom Racing\'s privacy policy.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_reviews', page:'reviews', title:'Customer Reviews | Venom Racing eMalahleni', description:'Read customer reviews for Venom Racing — RMI Accredited performance workshop and official Dastek Unichip dealer in eMalahleni.', ogTitle:'Customer Reviews | Venom Racing', ogDescription:'Read reviews from Venom Racing customers.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_services', page:'services', title:'Services &amp; Repairs | Venom Racing eMalahleni', description:'Professional vehicle servicing, maintenance and repairs at Venom Racing eMalahleni — minor &amp; major services, mechanical repairs, diagnostics, brakes, cooling, air conditioning and vehicle inspections.', ogTitle:'Services &amp; Repairs | Venom Racing', ogDescription:'Professional servicing, maintenance and repairs to keep your vehicle running safely, reliably and efficiently.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() },
+    { id:'seo_terms', page:'terms', title:'Terms &amp; Conditions | Venom Racing', description:'Venom Racing\'s terms and conditions for performance tuning, fabrication and servicing.', ogTitle:'Terms & Conditions | Venom Racing', ogDescription:'Venom Racing\'s terms and conditions.', ogImage:'assets/images/social/og-image.jpg', active:true, createdAt:Date.now() }
   ],
 
   /* FAQs, verbatim from faqs.html. */
@@ -2224,6 +2353,8 @@ const Store = {
       products:this.list('products').filter(p=>p.active).length,
       brands:this.list('brands').filter(x=>x.active).length,
       faqs:this.list('faqs').filter(f=>f.active).length,
+      sections:this.list('pageSections').filter(x=>x.active).length,
+      seo:this.list('seo').filter(x=>x.active).length,
       gallery:this.list('gallery').length,
       testimonials:this.list('testimonials').length,
       unread:this.list('enquiries').filter(e=>e.status==='unread').length,
@@ -3346,6 +3477,156 @@ Portal.register({
 });
 
 /* ==================================================================
+   MODULE: Page Sections
+   The repeated card lists the website renders on several pages:
+   why-choose cards, process steps, trust-bar items, technology chips
+   and the specialise grid.
+   ================================================================== */
+Portal.register({
+  id:'sections', title:'Page Sections', sub:'Cards and steps across your pages', icon:'layers', group:'Website', instant:true,
+  state:{ page:'index' },
+  badge(st){ return st.sections ? {text:String(st.sections),mut:true} : null; },
+  render(){
+    const s = this.state;
+    const all = Store.list('pageSections');
+    const pages = BUSINESS.vocab.pages.filter(p=>all.some(x=>x.page===p));
+    if(!pages.length) pages.push('index');
+    if(pages.indexOf(s.page)<0) s.page = pages[0];
+    const mine = all.filter(x=>x.page===s.page);
+    const types = BUSINESS.vocab.sectionTypes.filter(t=>mine.some(x=>x.section===t.v));
+
+    return `
+    ${H.head('Page Sections','The repeating cards and steps on your website. Edit the words here and the page follows.',
+      `<button class="btn btn-pri" data-act="add">${ICON.plus} Add item</button>`)}
+
+    <div class="segbar" style="margin-bottom:18px">
+      ${pages.map(p=>`<button data-pg="${U.esc(p)}" class="${s.page===p?'on':''}">${U.esc(p)}.html<span class="n">${all.filter(x=>x.page===p).length}</span></button>`).join('')}
+    </div>
+
+    ${types.length ? types.map(t=>{
+      const items = mine.filter(x=>x.section===t.v);
+      return H.card(t.l, items.length+' on '+t.where,
+        `<div data-sec="${U.esc(t.v)}">${items.map(x=>`
+          <div class="sortrow" data-id="${U.esc(x.id)}">
+            <span class="drag-handle">${ICON.grip}</span>
+            <div style="min-width:0;flex:1">
+              <b style="font-size:13.5px;display:block">${U.esc(x.title)}</b>
+              ${x.body?`<small style="font-size:11.5px;color:var(--text-3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${U.esc(x.body)}</small>`:''}
+            </div>
+            ${x.active?'':`<span class="chip warn"><i></i>Hidden</span>`}
+            <button class="btn btn-sm" data-xact="edit" data-id="${U.esc(x.id)}" aria-label="Edit ${U.esc(x.title)}" title="Edit">${ICON.edit}</button>
+            <button class="btn btn-sm btn-dan" data-xact="del" data-id="${U.esc(x.id)}" aria-label="Delete ${U.esc(x.title)}" title="Delete">${ICON.trash}</button>
+          </div>`).join('')}</div>`,'','flush');
+    }).join('<div style="height:14px"></div>')
+    : H.empty('layers','Nothing on this page yet','Add a card or a step and it appears on this page of your website.',
+        `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add item</button>`)}`;
+  },
+  mount(root){
+    const s = this.state;
+    U.on(root,'click','[data-pg]',(e,b)=>{ s.page=b.dataset.pg; Router.refresh(); });
+    U.on(root,'click','[data-act="add"]',()=>Modules.sectionForm(null,s.page));
+    U.on(root,'click','[data-xact]',async(e,b)=>{
+      const x = Store.find('pageSections',b.dataset.id);
+      if(!x) return;
+      if(b.dataset.xact==='edit') return Modules.sectionForm(x.id);
+      if(await UI.confirm({title:'Delete this item?',message:'"'+x.title+'" is removed from '+x.page+'.html.',confirmText:'Delete item'})){
+        Store.remove('pageSections',x.id);
+        Store.log('Section item deleted',x.title,'trash','dan');
+        Router.refresh(); UI.toast('ok','Item deleted','');
+      }
+    });
+    U.els('[data-sec]',root).forEach(box=>UI.sortable(box,'.sortrow',ids=>{
+      const map = {}; Store.list('pageSections').forEach(x=>map[x.id]=x);
+      const moved = ids.map(id=>map[id]).filter(Boolean);
+      const rest = Store.list('pageSections').filter(x=>ids.indexOf(x.id)<0);
+      Store.data.pageSections = moved.concat(rest);
+      Store.persist(); UI.toast('ok','Order updated','Section reordered');
+    }));
+  }
+});
+
+/* ==================================================================
+   MODULE: SEO
+   Per page: browser title, meta description and social preview.
+   ================================================================== */
+Portal.register({
+  id:'seo', title:'SEO', sub:'Titles, descriptions and social previews', icon:'search', group:'Website', instant:true,
+  render(){
+    const list = Store.list('seo');
+    return `
+    ${H.head('SEO','What Google and social networks show for each page. Nothing is generated for you - these are your words.',
+      `<button class="btn btn-pri" data-act="add">${ICON.plus} Add a page</button>`)}
+    ${list.length ? `<div class="grid" style="gap:12px">${list.map(x=>{
+      const tl = (x.title||'').length, dl = (x.description||'').length;
+      const tTone = tl>60?'warn':tl?'ok':'';
+      const dTone = dl>160?'warn':dl?'ok':'';
+      return `<div class="card lift" data-id="${U.esc(x.id)}">
+        <div class="card-b">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div style="min-width:0">
+              <b style="font-size:14px;display:block">${U.esc(x.page)}.html</b>
+              <small style="font-size:11.5px;color:var(--text-3)">${U.esc(x.title||'No title set')}</small>
+            </div>
+            ${x.active?'':`<span class="chip warn"><i></i>Hidden</span>`}
+          </div>
+          <div class="row" style="margin-top:10px">
+            <span class="chip ${tTone}">${ICON.type} Title ${tl}/60</span>
+            <span class="chip ${dTone}">${ICON.doc} Description ${dl}/160</span>
+            ${x.ogImage?`<span class="chip ok">${ICON.image} Preview image</span>`:`<span class="chip">${ICON.image} No preview image</span>`}
+          </div>
+        </div>
+        <div class="veh-acts">
+          <button class="btn btn-sm" data-seo="edit" data-id="${U.esc(x.id)}">${ICON.edit} Edit</button>
+          <button class="btn btn-sm btn-dan" data-seo="del" data-id="${U.esc(x.id)}" aria-label="Delete SEO for ${U.esc(x.page)}" title="Delete">${ICON.trash}</button>
+        </div>
+      </div>`;
+    }).join('')}</div>`
+    : H.empty('search','No pages yet','Add a page and set the title and description Google should show.',
+        `<button class="btn btn-pri" data-act="add" style="margin-top:4px">${ICON.plus} Add a page</button>`)}`;
+  },
+  mount(root){
+    U.on(root,'click','[data-act="add"]',()=>Modules.seoForm(null));
+    U.on(root,'click','[data-seo]',async(e,b)=>{
+      const x = Store.find('seo',b.dataset.id);
+      if(!x) return;
+      if(b.dataset.seo==='edit') return Modules.seoForm(x.id);
+      if(await UI.confirm({title:'Delete these SEO settings?',message:x.page+'.html falls back to whatever is written into the page.',confirmText:'Delete'})){
+        Store.remove('seo',x.id);
+        Store.log('SEO deleted',x.page,'trash','dan');
+        Router.refresh(); UI.toast('ok','Deleted','');
+      }
+    });
+  }
+});
+
+/* ==================================================================
+   MODULE: Media Library
+   Everything uploaded to Storage, in one place.
+   ================================================================== */
+Portal.register({
+  id:'media', title:'Media Library', sub:'Every image you have uploaded', icon:'image', group:'Website', instant:true,
+  render(){
+    return `
+    ${H.head('Media Library','Every image uploaded from this portal, across your gallery, products, brands and branding.',
+      `<button class="btn" data-act="reload">${ICON.refresh} Reload</button>`)}
+    <div id="mediaBody">
+      <div class="row" style="gap:10px;align-items:center;color:var(--text-3);font-size:13px">
+        ${ICON.refresh} Loading your media...
+      </div>
+    </div>`;
+  },
+  mount(root){
+    Modules.paintMedia();
+    U.on(root,'click','[data-act="reload"]',()=>Modules.paintMedia());
+    U.on(root,'click','[data-mprev]',(e,b)=>UI.lightbox(b.dataset.mprev));
+    U.on(root,'click','[data-mcopy]',(e,b)=>{
+      U.copy(b.dataset.mcopy);
+      UI.toast('ok','Link copied','Paste it wherever you need the image');
+    });
+  }
+});
+
+/* ==================================================================
    MODULE: Contact details
    ================================================================== */
 Portal.register({
@@ -4130,6 +4411,34 @@ create table if not exists public.faqs (
   updated_at  timestamptz not null default now()
 );
 
+create table if not exists public.page_sections (
+  id          text primary key,
+  page        text not null default '',
+  section     text not null default '',
+  title       text not null default '',
+  body        text default '',
+  icon        text default '',
+  image       text default '',
+  active      boolean not null default true,
+  sort_order  int not null default 0,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.seo (
+  id              text primary key,
+  page            text not null default '',
+  title           text default '',
+  description     text default '',
+  og_title        text default '',
+  og_description  text default '',
+  og_image        text default '',
+  active          boolean not null default true,
+  sort_order      int not null default 0,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
 create table if not exists public.testimonials (
   id          text primary key,
   name        text not null default '',
@@ -4180,6 +4489,10 @@ create table if not exists public.activity_log (
 
 create index if not exists services_division_idx
   on public.services (division, active, sort_order);
+create index if not exists page_sections_idx
+  on public.page_sections (page, section, active, sort_order);
+create index if not exists seo_page_idx
+  on public.seo (page, active);
 create index if not exists faqs_category_idx
   on public.faqs (category, active, sort_order);
 create index if not exists products_active_idx
@@ -4200,7 +4513,7 @@ $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['site_settings','services','stages','products','brands','faqs','testimonials','enquiries']
+  foreach t in array array['site_settings','services','stages','products','brands','faqs','page_sections','seo','testimonials','enquiries']
   loop
     execute format('drop trigger if exists touch_%1$s on public.%1$s', t);
     execute format(
@@ -4238,6 +4551,8 @@ alter table public.stages        enable row level security;
 alter table public.products      enable row level security;
 alter table public.brands        enable row level security;
 alter table public.faqs          enable row level security;
+alter table public.page_sections  enable row level security;
+alter table public.seo           enable row level security;
 alter table public.testimonials  enable row level security;
 alter table public.enquiries     enable row level security;
 alter table public.activity_log  enable row level security;
@@ -4249,7 +4564,7 @@ begin
     select schemaname, tablename, policyname
     from pg_policies
     where schemaname = 'public'
-      and tablename in ('site_settings','services','stages','products','brands','faqs','testimonials','enquiries','activity_log','portal_owners')
+      and tablename in ('site_settings','services','stages','products','brands','faqs','page_sections','seo','testimonials','enquiries','activity_log','portal_owners')
   loop
     execute format('drop policy %I on %I.%I', r.policyname, r.schemaname, r.tablename);
   end loop;
@@ -4264,6 +4579,8 @@ create policy "public reads stages"       on public.stages        for select to 
 create policy "public reads products"     on public.products      for select to anon using (active = true);
 create policy "public reads brands"       on public.brands        for select to anon using (active = true);
 create policy "public reads faqs"         on public.faqs          for select to anon using (active = true);
+create policy "public reads sections"     on public.page_sections for select to anon using (active = true);
+create policy "public reads seo"          on public.seo           for select to anon using (active = true);
 create policy "public reads testimonials" on public.testimonials  for select to anon using (true);
 create policy "public submits enquiry" on public.enquiries for insert to anon with check (true);
 
@@ -4273,6 +4590,8 @@ create policy "owner manages stages"       on public.stages        for all to au
 create policy "owner manages products"     on public.products      for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages brands"       on public.brands        for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages faqs"         on public.faqs          for all to authenticated using (public.is_owner()) with check (public.is_owner());
+create policy "owner manages sections"     on public.page_sections for all to authenticated using (public.is_owner()) with check (public.is_owner());
+create policy "owner manages seo"          on public.seo           for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages testimonials" on public.testimonials  for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages enquiries"    on public.enquiries     for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages activity"     on public.activity_log  for all to authenticated using (public.is_owner()) with check (public.is_owner());
@@ -4331,6 +4650,19 @@ create or replace view public.website_brands
   where active = true
   order by sort_order asc, created_at asc;
 
+create or replace view public.website_sections
+  with (security_invoker = true) as
+  select id, page, section, title, body, icon, image, sort_order
+  from public.page_sections
+  where active = true
+  order by page asc, section asc, sort_order asc, created_at asc;
+
+create or replace view public.website_seo
+  with (security_invoker = true) as
+  select id, page, title, description, og_title, og_description, og_image
+  from public.seo
+  where active = true;
+
 create or replace view public.website_faqs
   with (security_invoker = true) as
   select id, question, answer, category, featured, sort_order
@@ -4343,6 +4675,7 @@ grant usage on schema public to anon, authenticated;
 grant select on public.site_settings, public.services,
                 public.stages, public.products, public.brands, public.faqs,
                 public.testimonials,
+                public.website_sections, public.website_seo,
                 public.website_services,
                 public.website_stages, public.website_products,
                 public.website_brands, public.website_faqs to anon;
@@ -4350,9 +4683,11 @@ grant insert on public.enquiries to anon;
 
 grant select, insert, update, delete
   on public.site_settings, public.services, public.stages,
-     public.products, public.brands, public.faqs, public.testimonials,
+     public.products, public.brands, public.faqs, public.page_sections,
+     public.seo, public.testimonials,
      public.enquiries, public.activity_log to authenticated;
-grant select on public.website_services,
+grant select on public.website_sections, public.website_seo,
+                public.website_services,
                 public.website_stages, public.website_products,
                 public.website_brands, public.website_faqs,
                 public.portal_owners to authenticated;
@@ -4382,7 +4717,9 @@ const Modules = {
     ['products','Products','additive','performance.html'],
     ['brands','Brands','shield','performance.html'],
     ['testimonials','Reviews','star','reviews.html and the homepage'],
-    ['faqs','FAQs','question','faqs.html and the homepage']
+    ['faqs','FAQs','question','faqs.html and the homepage'],
+    ['pageSections','Page sections','layers','cards and steps across your pages'],
+    ['seo','SEO','search','the title and preview for every page']
   ],
 
   /* Compares what is live on the website against what is in the portal, so
@@ -4465,6 +4802,122 @@ const Modules = {
     }catch(e){
       UI.toast('err','Could not publish',e.message);
     }
+  },
+
+  /* ---------- page sections, SEO and media --------------------------- */
+  sectionForm(id,page){
+    const editing = !!id;
+    const x = editing ? Object.assign({},Store.find('pageSections',id))
+      : { page:page||'index', section:'feature', title:'', body:'', icon:'', image:'', active:true };
+    const draft = Object.assign({},x);
+    const m = UI.modal({
+      size:'md',
+      title: editing ? 'Edit item' : 'Add an item',
+      sub:'Appears on your website in the section you choose.',
+      body:`<div class="grid" style="gap:14px">
+        <div class="grid g2">
+          ${H.field('Page',H.sel('page',draft.page,BUSINESS.vocab.pages.map(p=>({v:p,l:p+'.html'})),'Page'))}
+          ${H.field('Section',H.sel('section',draft.section,BUSINESS.vocab.sectionTypes.map(t=>({v:t.v,l:t.l})),'Section'))}
+        </div>
+        ${H.field('Heading',H.input('title',draft.title,'RMI Accredited'))}
+        ${H.field('Text',H.ta('body',draft.body,'The sentence shown under the heading.',3),'Trust bar items and technology chips show the heading only.','optional')}
+        ${H.toggleCard('active',draft.active,'Live on website','Switch off to hide it without deleting it','ok','globe')}
+      </div>`,
+      footer:`<button class="btn" data-close>Cancel</button>
+              <div class="sp"><button class="btn btn-pri" data-save>${ICON.check} ${editing?'Save changes':'Add item'}</button></div>`
+    });
+    H.bind(m.el,(k,v)=>draft[k]=v,()=>{});
+    U.el('[data-save]',m.el).addEventListener('click',()=>{
+      if(!draft.title.trim()) return UI.toast('err','A heading is needed','Type the heading first.');
+      if(editing){ Store.update('pageSections',id,draft); Store.log('Section updated',draft.title,'layers'); }
+      else{ Store.insert('pageSections',draft); Store.log('Section added',draft.title,'layers','ok'); }
+      Store.persist(true); m.close(); Router.refresh();
+      UI.toast('ok',editing?'Item saved':'Item added',draft.title);
+    });
+  },
+
+  seoForm(id){
+    const editing = !!id;
+    const used = Store.list('seo').map(x=>x.page);
+    const free = BUSINESS.vocab.pages.filter(p=>used.indexOf(p)<0);
+    const x = editing ? Object.assign({},Store.find('seo',id))
+      : { page:free[0]||'index', title:'', description:'', ogTitle:'', ogDescription:'', ogImage:'', active:true };
+    const draft = Object.assign({},x);
+    const m = UI.modal({
+      size:'md',
+      title: editing ? 'Edit SEO for '+x.page+'.html' : 'SEO for a page',
+      sub:'What Google and social networks show for this page.',
+      body:`<div class="grid" style="gap:14px">
+        ${editing?'':H.field('Page',H.sel('page',draft.page,BUSINESS.vocab.pages.map(p=>({v:p,l:p+'.html'})),'Page'))}
+        ${H.field('Browser title',H.input('title',draft.title,'Venom Racing | Performance ECU Tuning'),'Google usually shows the first 60 characters.')}
+        ${H.field('Meta description',H.ta('description',draft.description,'One or two sentences describing this page.',3),'Google usually shows the first 160 characters.')}
+        <div class="sep"></div>
+        ${H.field('Social title',H.input('ogTitle',draft.ogTitle,'Leave blank to reuse the browser title'),'','optional')}
+        ${H.field('Social description',H.ta('ogDescription',draft.ogDescription,'Leave blank to reuse the meta description',2),'','optional')}
+        ${H.field('Social preview image',`<div id="seoImg"></div>`,'Shown when the page is shared on WhatsApp, Facebook or X.','optional')}
+        ${H.toggleCard('active',draft.active,'Apply to this page','Switch off to leave the page using whatever is written into it','ok','globe')}
+      </div>`,
+      footer:`<button class="btn" data-close>Cancel</button>
+              <div class="sp"><button class="btn btn-pri" data-save>${ICON.check} ${editing?'Save changes':'Add page'}</button></div>`
+    });
+    H.bind(m.el,(k,v)=>draft[k]=v,()=>{});
+    UI.imagePicker(U.el('#seoImg',m.el),{value:draft.ogImage,label:'Upload preview image',h:110,onChange:v=>draft.ogImage=v});
+    U.el('[data-save]',m.el).addEventListener('click',()=>{
+      if(!draft.title.trim()) return UI.toast('err','A title is needed','Type the browser title first.');
+      if(!editing && Store.list('seo').some(s=>s.page===draft.page))
+        return UI.toast('err','That page already has SEO','Edit the existing entry instead.');
+      if(!draft.id) draft.id = 'seo_'+draft.page;
+      if(editing){ Store.update('seo',id,draft); Store.log('SEO updated',draft.page,'search'); }
+      else{ Store.insert('seo',draft); Store.log('SEO added',draft.page,'search','ok'); }
+      Store.persist(true); m.close(); Router.refresh();
+      UI.toast('ok',editing?'SEO saved':'SEO added',draft.page+'.html');
+    });
+  },
+
+  /* Reads the buckets directly rather than tracking uploads separately,
+     so the library always reflects what is really in Storage. */
+  async paintMedia(){
+    const host = U.el('#mediaBody');
+    if(!host) return;
+    if(!Cloud.authed){
+      host.innerHTML = `<div class="note warn">${ICON.warn}<div>Sign in to see your uploaded media.</div></div>`;
+      return;
+    }
+    const buckets = [BUSINESS.buckets.gallery,BUSINESS.buckets.branding];
+    let groups;
+    try{
+      groups = await Promise.all(buckets.map(async b=>({ bucket:b, rows:await Cloud.listBucket(b) })));
+    }catch(e){
+      host.innerHTML = `<div class="note dan">${ICON.warn}<div><b>Could not reach Storage.</b> ${U.esc(e.message)}</div></div>`;
+      return;
+    }
+    const total = groups.reduce((n,g)=>n+g.rows.length,0);
+    if(!total){
+      host.innerHTML = H.empty('image','No media uploaded yet',
+        'Images you add in Gallery, Products, Brands or SEO appear here.');
+      return;
+    }
+    host.innerHTML = groups.filter(g=>g.rows.length).map(g=>
+      H.card(g.bucket, g.rows.length+' file'+(g.rows.length===1?'':'s'),
+        `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
+          ${g.rows.map(r=>{
+            const url = Cloud.publicUrl(g.bucket,r.name);
+            const kb = r.metadata && r.metadata.size ? Math.round(r.metadata.size/1024)+' KB' : '';
+            return `<div class="card" style="box-shadow:none;background:var(--glass)">
+              <img src="${U.esc(url)}" alt="${U.esc(r.name)}" loading="lazy"
+                   style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0">
+              <div class="card-b tight">
+                <div style="font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${U.esc(r.name)}">${U.esc(r.name)}</div>
+                <div style="font-size:11px;color:var(--text-3)">${U.esc(kb)}</div>
+                <div class="row" style="margin-top:8px;gap:6px">
+                  <button class="btn btn-sm" data-mprev="${U.esc(url)}" aria-label="Preview ${U.esc(r.name)}" title="Preview">${ICON.eye}</button>
+                  <button class="btn btn-sm" data-mcopy="${U.esc(url)}" aria-label="Copy link to ${U.esc(r.name)}" title="Copy link">${ICON.copy}</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`)
+    ).join('<div style="height:14px"></div>');
   },
 
   /* ---------- services, stages, products, brands, faqs ------------ */

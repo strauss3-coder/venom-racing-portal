@@ -90,6 +90,34 @@ create table if not exists public.faqs (
   updated_at  timestamptz not null default now()
 );
 
+create table if not exists public.page_sections (
+  id          text primary key,
+  page        text not null default '',
+  section     text not null default '',
+  title       text not null default '',
+  body        text default '',
+  icon        text default '',
+  image       text default '',
+  active      boolean not null default true,
+  sort_order  int not null default 0,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.seo (
+  id              text primary key,
+  page            text not null default '',
+  title           text default '',
+  description     text default '',
+  og_title        text default '',
+  og_description  text default '',
+  og_image        text default '',
+  active          boolean not null default true,
+  sort_order      int not null default 0,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
 create table if not exists public.testimonials (
   id          text primary key,
   name        text not null default '',
@@ -140,6 +168,10 @@ create table if not exists public.activity_log (
 
 create index if not exists services_division_idx
   on public.services (division, active, sort_order);
+create index if not exists page_sections_idx
+  on public.page_sections (page, section, active, sort_order);
+create index if not exists seo_page_idx
+  on public.seo (page, active);
 create index if not exists faqs_category_idx
   on public.faqs (category, active, sort_order);
 create index if not exists products_active_idx
@@ -160,7 +192,7 @@ $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['site_settings','services','stages','products','brands','faqs','testimonials','enquiries']
+  foreach t in array array['site_settings','services','stages','products','brands','faqs','page_sections','seo','testimonials','enquiries']
   loop
     execute format('drop trigger if exists touch_%1$s on public.%1$s', t);
     execute format(
@@ -198,6 +230,8 @@ alter table public.stages        enable row level security;
 alter table public.products      enable row level security;
 alter table public.brands        enable row level security;
 alter table public.faqs          enable row level security;
+alter table public.page_sections  enable row level security;
+alter table public.seo           enable row level security;
 alter table public.testimonials  enable row level security;
 alter table public.enquiries     enable row level security;
 alter table public.activity_log  enable row level security;
@@ -209,7 +243,7 @@ begin
     select schemaname, tablename, policyname
     from pg_policies
     where schemaname = 'public'
-      and tablename in ('site_settings','services','stages','products','brands','faqs','testimonials','enquiries','activity_log','portal_owners')
+      and tablename in ('site_settings','services','stages','products','brands','faqs','page_sections','seo','testimonials','enquiries','activity_log','portal_owners')
   loop
     execute format('drop policy %I on %I.%I', r.policyname, r.schemaname, r.tablename);
   end loop;
@@ -224,6 +258,8 @@ create policy "public reads stages"       on public.stages        for select to 
 create policy "public reads products"     on public.products      for select to anon using (active = true);
 create policy "public reads brands"       on public.brands        for select to anon using (active = true);
 create policy "public reads faqs"         on public.faqs          for select to anon using (active = true);
+create policy "public reads sections"     on public.page_sections for select to anon using (active = true);
+create policy "public reads seo"          on public.seo           for select to anon using (active = true);
 create policy "public reads testimonials" on public.testimonials  for select to anon using (true);
 create policy "public submits enquiry" on public.enquiries for insert to anon with check (true);
 
@@ -233,6 +269,8 @@ create policy "owner manages stages"       on public.stages        for all to au
 create policy "owner manages products"     on public.products      for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages brands"       on public.brands        for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages faqs"         on public.faqs          for all to authenticated using (public.is_owner()) with check (public.is_owner());
+create policy "owner manages sections"     on public.page_sections for all to authenticated using (public.is_owner()) with check (public.is_owner());
+create policy "owner manages seo"          on public.seo           for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages testimonials" on public.testimonials  for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages enquiries"    on public.enquiries     for all to authenticated using (public.is_owner()) with check (public.is_owner());
 create policy "owner manages activity"     on public.activity_log  for all to authenticated using (public.is_owner()) with check (public.is_owner());
@@ -291,6 +329,19 @@ create or replace view public.website_brands
   where active = true
   order by sort_order asc, created_at asc;
 
+create or replace view public.website_sections
+  with (security_invoker = true) as
+  select id, page, section, title, body, icon, image, sort_order
+  from public.page_sections
+  where active = true
+  order by page asc, section asc, sort_order asc, created_at asc;
+
+create or replace view public.website_seo
+  with (security_invoker = true) as
+  select id, page, title, description, og_title, og_description, og_image
+  from public.seo
+  where active = true;
+
 create or replace view public.website_faqs
   with (security_invoker = true) as
   select id, question, answer, category, featured, sort_order
@@ -303,6 +354,7 @@ grant usage on schema public to anon, authenticated;
 grant select on public.site_settings, public.services,
                 public.stages, public.products, public.brands, public.faqs,
                 public.testimonials,
+                public.website_sections, public.website_seo,
                 public.website_services,
                 public.website_stages, public.website_products,
                 public.website_brands, public.website_faqs to anon;
@@ -310,9 +362,11 @@ grant insert on public.enquiries to anon;
 
 grant select, insert, update, delete
   on public.site_settings, public.services, public.stages,
-     public.products, public.brands, public.faqs, public.testimonials,
+     public.products, public.brands, public.faqs, public.page_sections,
+     public.seo, public.testimonials,
      public.enquiries, public.activity_log to authenticated;
-grant select on public.website_services,
+grant select on public.website_sections, public.website_seo,
+                public.website_services,
                 public.website_stages, public.website_products,
                 public.website_brands, public.website_faqs,
                 public.portal_owners to authenticated;

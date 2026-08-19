@@ -19,7 +19,7 @@ setTimeout(()=>{
     return q(v);
   };
   const out=[];
-  const COLS=['services','stages','products','brands','faqs','testimonials'];
+  const COLS=['services','stages','products','brands','faqs','pageSections','seo','testimonials'];
   let total=0;
   COLS.forEach(key=>{
     const m=MAP[key], rows=Store.list(key).filter(r=>!r.demo);

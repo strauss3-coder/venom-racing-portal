@@ -15,7 +15,7 @@ for t in boot crud url firstrun preconf a11y seed contrast livepanel no-builds m
 done
 
 echo; echo "WEBSITE"; line
-for t in web sync sync2 sync3 site-a11y site-contrast responsive live-render; do
+for t in web sync sync2 sync3 sync4 site-a11y site-contrast responsive live-render; do
   r=$(node $t.js 2>&1 | tail -1)
   printf "  %-10s %s\n" "$t" "$r"
   echo "$r" | grep -q PASS || fail=1

@@ -47,7 +47,7 @@ function boot(handler){return new Promise(res=>{
   t('offers the fix',()=>{ if(!/Publish changes/.test(w.document.getElementById('view').textContent)) throw new Error('no publish button'); });
 
   console.log('\n=== FULLY PUBLISHED ===');
-  const full={website_services:20,website_stages:5,website_products:13,website_brands:22,website_faqs:9,testimonials:11};
+  const full={website_services:20,website_stages:5,website_products:13,website_brands:22,website_faqs:9,testimonials:11,website_sections:51,website_seo:10};
   w=await boot((u)=>{
     const tb=String(u).split('/rest/v1/')[1];
     if(!tb) return ok({});
@@ -58,7 +58,7 @@ function boot(handler){return new Promise(res=>{
   w.VenomPortal.Cloud.setSession({access_token:'x',refresh_token:'y',email:'o@x.com',at:Date.now()});
   p=await render(w);
   t('reports up to date',()=>{ if(!/up to date/.test(p.textContent)) throw new Error(p.textContent.slice(0,120)); });
-  t('counts the live records',()=>{ if(!/80 records are live/.test(p.textContent)) throw new Error(p.textContent.slice(0,140)); });
+  t('counts the live records',()=>{ if(!/141 records are live/.test(p.textContent)) throw new Error(p.textContent.slice(0,140)); });
   t('names the live domain',()=>{ if(!/venomracing\.co\.za/.test(p.textContent)) throw new Error('domain missing'); });
   t('links to the live site',()=>{ const a=w.document.querySelector('#view a[href^="https://venomracing"]');
     if(!a) throw new Error('no link to the site'); });
