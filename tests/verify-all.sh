@@ -45,7 +45,7 @@ for u in "https://strauss3-coder.github.io/venom-racing-portal/" "https://venomr
 done
 
 echo; echo "DATABASE CONTENT"; line
-for t in services stages products brands faqs testimonials; do
+for t in services stages products brands faqs page_sections seo testimonials; do
   n=$(curl -s "$P/rest/v1/$t?select=id" -H "apikey: $K" -H "Authorization: Bearer $K" --max-time 12 \
       | python3 -c "import sys,json;d=json.load(sys.stdin);print(len(d) if isinstance(d,list) else 0)" 2>/dev/null)
   printf "  %-14s %s rows\n" "$t" "$n"
