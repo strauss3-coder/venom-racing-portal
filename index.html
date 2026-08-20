@@ -1085,6 +1085,7 @@ const BUSINESS = {
     /* Keyed by the data-vr-heading in the website's contact.html. */
     contactSections:{ hero:'Page header', map:'Map card' },
     faqSections:{ hero:'Page header' },
+    reviewSections:{ hero:'Page header' },
     /* Keyed by the data-vr-label in contact.html. */
     contactLabels:{
       phone:'Phone card title', phone1:'First number label', phone2:'Second number label',
@@ -2342,6 +2343,21 @@ const SEED = () => ({
       labels:{ closing:'Still have questions?' },
       sections:{
         hero:{ eyebrow:'Questions', title:'Frequently Asked Questions', intro:'' }
+      }
+    },
+    reviews:{
+      /* Both pairs of buttons carry the same two names, so each is set once
+         and applied at the top and the bottom of the page. Their address is
+         your Google reviews link, from Contact Details. */
+      buttons:{
+        google:{ label:'Read reviews button', text:'Read All Google Reviews', link:null },
+        leave:{  label:'Leave a review button', text:'Leave a Review', link:null }
+      },
+      searchText:'Search reviews…',
+      labels:{ empty:'No reviews match your search.' },
+      sections:{
+        hero:{ eyebrow:'Customer Testimonials', title:'Trusted by Performance Enthusiasts Across South Africa',
+          intro:'Read genuine feedback from customers who have trusted Venom Racing with performance tuning, diagnostics, servicing and custom fabrication.' }
       }
     }
   },
@@ -3945,6 +3961,47 @@ Portal.register({
     },()=>{
       Store.persist(); Store.emit('pages');
       Store.log('FAQs page updated','FAQs page content was edited','help');
+    });
+  }
+});
+
+/* ==================================================================
+   MODULE: Reviews page
+   ================================================================== */
+Portal.register({
+  id:'reviewpage', title:'Reviews Page', sub:'The heading, search and buttons', icon:'star', group:'Website', instant:true,
+  render(){
+    const p = Store.data.pages.reviews;
+    const secs = p.sections || {};
+    const c = Store.data.contact;
+    const link = (c.social||{}).google;
+    return `
+    ${H.head('Reviews Page','The words around your reviews on reviews.html. The reviews themselves come from Testimonials, the row of ticks from Page Sections, and your star rating from Contact Details.',
+      `<a class="btn" href="${U.esc(BUSINESS.website)}/reviews.html" target="_blank" rel="noopener">${ICON.eye} View page</a>`)}
+    <div class="grid g2" style="align-items:start">
+      ${Object.keys(BUSINESS.vocab.reviewSections).filter(k=>secs[k]).map(k=>H.sectionCard(k,BUSINESS.vocab.reviewSections[k],secs[k])).join('')}
+      ${H.card('Search box and empty message','What visitors see while searching',`
+        <div class="grid" style="gap:14px">
+          ${H.field('Search box placeholder',H.input('searchText',p.searchText,'Search reviews…'))}
+          ${H.field('When nothing matches',H.input('labels.empty',(p.labels||{}).empty,'No reviews match your search.'))}
+        </div>`)}
+    </div>
+    <div style="height:14px"></div>
+    ${H.card('Your rating','',`
+      <div class="note">${ICON.info}<div>The page shows <b>${U.esc(c.googleRating||'no rating')}</b> out of 5, and the buttons open <b>${U.esc(link||'no link set')}</b>. Both are set in Contact Details.</div></div>`)}
+    <div style="height:14px"></div>
+    ${H.buttonCard(p.buttons)}`;
+  },
+  mount(root){
+    const p = Store.data.pages.reviews;
+    H.bind(root,(k,v)=>{
+      const parts = k.split('.');
+      let o = p;
+      while(parts.length>1){ const key=parts.shift(); o = (o[key] = o[key]||{}); }
+      o[parts[0]] = v;
+    },()=>{
+      Store.persist(); Store.emit('pages');
+      Store.log('Reviews page updated','Reviews page content was edited','star');
     });
   }
 });
