@@ -1061,6 +1061,13 @@ const BUSINESS = {
     fuels:['Petrol','Diesel','Ethanol','Methanol','Race fuel'],
     trans:['Manual','Automatic','DSG','CVT','Tiptronic'],
     divisions:['Performance','Services & Repairs'],
+    /* Keyed by the data-vr-heading in the website's index.html. The order
+       here is the order the blocks appear on the page. */
+    homeSections:{
+      services:'Services block', why:'Why Choose Us block', stages:'Performance Stages block',
+      process:'How It Works block', reviews:'Customer Reviews block', faq:'FAQs block',
+      contact:'Contact form block'
+    },
     tuningTypes:['ECU remap','Dastek Unichip','ECU + TCU','TCU only','Piggyback'],
     validation:['Dyno','V-Box','Dyno + V-Box','Road tested'],
     productTypes:['Octane booster','Injector cleaner','Fuel enhancer','Service treatment','Transmission treatment','Protection additive'],
@@ -1106,8 +1113,34 @@ const BUSINESS = {
     heroSubtitle:'An RMI Accredited workshop and advanced accredited Dastek Unichip dealer in eMalahleni. In-house master tuner offering dyno and V-Box proven ECU tuning to ensure maximum performance, custom exhaust fabrication and precision automotive repairs.',
     btn1Text:'Explore Services', btn1Link:'performance.html',
     btn2Text:'Request Quote', btn2Link:'contact.html',
+    aboutEyebrow:'About Venom Racing',
     aboutTitle:'Precision Tuning, Proven On The Dyno',
     aboutText:'Venom Racing is a performance workshop based in eMalahleni, built on preferred performance brands including Dastek Unichip, De Graaf Exhaust Systems, BNB Exhausts, Viper Performance Exhausts and Cirrus Performance Intercoolers, plus in-house fabrication. Every calibration is professionally validated on the dyno or V-Box, proven to ensure maximum performance, safety and long-term reliability.',
+    aboutText2:"As an RMI Accredited facility, we hold ourselves to manufacturer-level standards on tooling, technician qualification, and safety — while specialising in the performance work most franchise workshops won't touch.",
+    aboutBtnText:'Our Story', aboutBtnLink:'about.html',
+    badgeTitle:'RMI Accredited', badgeText:'RMI Accredited workshop',
+    /* The three slides in the About carousel, exactly as index.html ships. */
+    showcase:[
+      { id:'sc_exhaust', url:'assets/images/about/home-exhaust.jpg', label:'Performance Exhaust', alt:'BMW M2 performance exhaust system by Venom Racing' },
+      { id:'sc_tools',   url:'assets/images/about/home-tools.jpg',   label:'Tools We Use',        alt:'ECU programming, tuning and diagnostic tools used by Venom Racing' },
+      { id:'sc_dyno',    url:'assets/images/about/home-dyno.jpg',    label:'On The Dyno',         alt:'BMW M4 on the Venom Racing dyno' }
+    ],
+    /* Every section heading on the homepage, keyed by the data-vr-heading
+       in index.html. Taken verbatim from the page as it stands. */
+    sections:{
+      services:{ eyebrow:'Our Expertise', title:'Master Tuning Specialists & Calibration',
+        intro:'From ECU calibration and performance exhaust systems to complete servicing — every build is validated on the dyno or V-Box, proven to ensure maximum performance.' },
+      why:{ eyebrow:'Why Choose Us', title:'26 Years of Experience, Exceptional Quality & Workmanship',
+        intro:'Focused on precision, reliability and attention to every final detail.' },
+      stages:{ eyebrow:'Performance Packages', title:'Choose Your Performance Stage',
+        intro:'Every performance package is carefully designed to build on the previous stage, ensuring reliability, safety and maximum performance.' },
+      process:{ eyebrow:'How It Works', title:'Our Performance Process', intro:'' },
+      reviews:{ eyebrow:'Customer Testimonials', title:'Trusted by Performance Enthusiasts Across South Africa',
+        intro:'Read genuine feedback from customers who have trusted Venom Racing with performance tuning, diagnostics, servicing and custom fabrication.' },
+      faq:{ eyebrow:'Questions', title:'Frequently Asked Questions', intro:'' },
+      contact:{ eyebrow:'Get In Touch', title:'Request A Quote',
+        intro:"Tell us about your vehicle and what you're looking to achieve — we'll get back to you to schedule a consultation." }
+    },
     ctaTitle:'Not sure which stage is right for your vehicle?',
     ctaText:'Tell us about your vehicle and what you are looking to achieve and we will get back to you to schedule a consultation.',
     ctaBtnText:'Book a Consultation', ctaBtnLink:'contact.html'
@@ -1220,6 +1253,17 @@ const ICON = (()=>{
 const U = {
   id:(p='id')=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
   esc:v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+  /* Media the website owns is stored the way the website refers to it, e.g.
+     assets/images/gallery/gp-exhaust-1.jpg. The portal is served from a
+     different origin, so those paths must be resolved against the website
+     before they can be shown here - otherwise every thumbnail is a 404.
+     Uploads (https://, data:, blob:) are already absolute and pass through. */
+  media(u){
+    if(!u) return '';
+    const s = String(u);
+    if(/^(https?:|data:|blob:|\/\/)/i.test(s)) return s;
+    return BUSINESS.website.replace(/\/+$/,'') + '/' + s.replace(/^\/+/,'');
+  },
   money(n){
     const v = Number(n)||0;
     return BUSINESS.currency.symbol+v.toLocaleString(BUSINESS.locale,{maximumFractionDigits:0});
@@ -2139,9 +2183,14 @@ const SEED = () => ({
     btn1Text:BUSINESS.copy.btn1Text, btn1Link:BUSINESS.copy.btn1Link,
     btn2Text:BUSINESS.copy.btn2Text, btn2Link:BUSINESS.copy.btn2Link,
     heroImage:'',
+    aboutEyebrow:BUSINESS.copy.aboutEyebrow,
     aboutTitle:BUSINESS.copy.aboutTitle,
     aboutText:BUSINESS.copy.aboutText,
-    aboutImage:'',
+    aboutText2:BUSINESS.copy.aboutText2,
+    aboutBtnText:BUSINESS.copy.aboutBtnText, aboutBtnLink:BUSINESS.copy.aboutBtnLink,
+    badgeTitle:BUSINESS.copy.badgeTitle, badgeText:BUSINESS.copy.badgeText,
+    showcase:BUSINESS.copy.showcase.map(s=>Object.assign({},s)),
+    sections:JSON.parse(JSON.stringify(BUSINESS.copy.sections)),
     /* Only figures the website itself already states. */
     stats:[
       { label:'Years of experience', value:'26+' },
@@ -2640,7 +2689,7 @@ const UI = {
         <div class="prog hidden" data-prog><i></i></div>
         ${imgs.length?`<div class="${cfg.square?'gal':'thumbs'}" data-thumbs>${imgs.map((src,i)=>`
           <div class="thumb" data-id="${i}" data-idx="${i}">
-            <img src="${src}" alt="Image ${i+1}" loading="lazy">
+            <img src="${U.media(src)}" alt="Image ${i+1}" loading="lazy">
             ${i===0&&!cfg.square?`<span class="pri">Main</span>`:''}
             <span class="ord">${i+1}</span>
             <div class="tb">
@@ -2698,7 +2747,7 @@ const UI = {
         e.preventDefault(); e.stopPropagation();
         const idx = Number(btn.closest('.thumb').dataset.idx);
         const act = btn.dataset.act;
-        if(act==='view') UI.lightbox(imgs[idx]);
+        if(act==='view') UI.lightbox(U.media(imgs[idx]));
         if(act==='del'){
           const gone = imgs[idx];
           imgs.splice(idx,1); paint(); cfg.onChange(imgs.slice());
@@ -2731,7 +2780,7 @@ const UI = {
       host.innerHTML = `
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <div data-pick style="width:${cfg.round?cfg.h+'px':'auto'};min-width:110px;height:${cfg.h}px;flex-shrink:0;border-radius:${cfg.round?'50%':'var(--r-md)'};overflow:hidden;border:1.6px dashed var(--line-2);background:var(--glass);display:grid;place-items:center;cursor:pointer;position:relative">
-            ${val?`<img src="${val}" style="width:100%;height:100%;object-fit:cover">`
+            ${val?`<img src="${U.media(val)}" style="width:100%;height:100%;object-fit:cover">`
                  :`<div style="text-align:center;color:var(--text-3);font-size:11.5px;padding:8px">
                       <div style="display:grid;place-items:center;margin-bottom:4px">${ICON.image}</div>${U.esc(cfg.label)}</div>`}
           </div>
@@ -2756,7 +2805,7 @@ const UI = {
           UI.toast('ok','Image uploaded','');
         }catch(err){ UI.toast('err','Upload failed',err.message); }
       });
-      const v = U.el('[data-view]',host); if(v) v.addEventListener('click',()=>UI.lightbox(val));
+      const v = U.el('[data-view]',host); if(v) v.addEventListener('click',()=>UI.lightbox(U.media(val)));
       const c = U.el('[data-clear]',host);
       if(c) c.addEventListener('click',()=>{ const gone=val; val=''; paint(); cfg.onChange(''); Cloud.removeImage(gone); UI.toast('info','Image removed',''); });
     }
@@ -3298,7 +3347,7 @@ Portal.register({
   tab:'hero',
   render(){
     const h = Store.data.homepage;
-    const tabs = [['hero','Hero section'],['about','About preview'],['cta','Call to action']];
+    const tabs = [['hero','Hero section'],['about','About section'],['sections','Section headings'],['cta','Call to action']];
     return `
     ${H.head('Homepage Editor','Change the words and images visitors see first. Everything saves as you type.',
       `<button class="btn" data-act="preview">${ICON.eye} Preview hero</button>`)}
@@ -3319,7 +3368,15 @@ Portal.register({
     const h = Store.data.homepage;
     const host = U.el('#hpBody',root);
     const save = ()=>{ Store.persist(); Store.emit('homepage'); };
-    const bindAll = ()=>H.bind(host,(k,v)=>{ h[k]=v; },()=>{ save(); Store.log('Homepage updated','Homepage content was edited','home'); });
+    /* Keys may be a dotted path, e.g. sections.services.eyebrow, so the
+       section-heading fields can write straight into the nested map. */
+    const setPath = (k,v)=>{
+      const parts = k.split('.');
+      let o = h;
+      while(parts.length>1){ const p=parts.shift(); o = (o[p] = o[p]||{}); }
+      o[parts[0]] = v;
+    };
+    const bindAll = ()=>H.bind(host,setPath,()=>{ save(); Store.log('Homepage updated','Homepage content was edited','home'); });
 
     if(this.tab==='hero'){
       host.innerHTML = `
@@ -3356,17 +3413,85 @@ Portal.register({
     }
 
     if(this.tab==='about'){
+      const slides = Array.isArray(h.showcase) ? h.showcase : [];
       host.innerHTML = `
         <div class="grid g2" style="align-items:start">
-          ${H.card('About preview text','The short story shown on your homepage',`
-            <div class="grid" style="gap:14px">
-              ${H.field('Section title',H.input('aboutTitle',h.aboutTitle,BUSINESS.copy.aboutTitle))}
-              ${H.field('About text',H.ta('aboutText',h.aboutText,'Tell visitors who you are',6),'Two or three sentences works best on a homepage.')}
-            </div>`)}
-          ${H.card('About image','A photo of your workshop','<div id="aboutImg"></div>')}
+          <div class="grid" style="gap:14px">
+            ${H.card('About text','The short story shown on your homepage',`
+              <div class="grid" style="gap:14px">
+                ${H.field('Small label above the title',H.input('aboutEyebrow',h.aboutEyebrow,BUSINESS.copy.aboutEyebrow))}
+                ${H.field('Section title',H.input('aboutTitle',h.aboutTitle,BUSINESS.copy.aboutTitle))}
+                ${H.field('First paragraph',H.ta('aboutText',h.aboutText,'Tell visitors who you are',6))}
+                ${H.field('Second paragraph',H.ta('aboutText2',h.aboutText2,'Optional second paragraph',4),'Leave empty and the website keeps the paragraph already on the page.')}
+              </div>`)}
+            ${H.card('Button','The link under the about text',`
+              <div class="grid g2">
+                ${H.field('Button text',H.input('aboutBtnText',h.aboutBtnText,BUSINESS.copy.aboutBtnText))}
+                ${H.field('Button link',H.input('aboutBtnLink',h.aboutBtnLink,BUSINESS.copy.aboutBtnLink))}
+              </div>`)}
+            ${H.card('Accreditation badge','The panel under the carousel',`
+              <div class="grid" style="gap:14px">
+                ${H.field('Badge title',H.input('badgeTitle',h.badgeTitle,BUSINESS.copy.badgeTitle))}
+                ${H.field('Badge text',H.input('badgeText',h.badgeText,BUSINESS.copy.badgeText))}
+              </div>`)}
+          </div>
+          <div class="grid" style="gap:14px">
+            ${H.card('About carousel','The rotating photos beside your about text',`
+              <div class="grid" style="gap:14px" id="scList">
+                ${slides.map((s,i)=>`
+                  <div class="card" style="box-shadow:none;background:var(--glass)">
+                    <div class="card-b tight">
+                      <div id="scImg${i}" style="margin-bottom:10px"></div>
+                      ${H.field('Caption',H.input('showcase.'+i+'.label',s.label,'Shown over the photo'))}
+                      <div class="row" style="margin-top:8px">
+                        <button class="btn btn-sm btn-dan" data-scdel="${i}" ${slides.length<2?'disabled':''}
+                          title="${slides.length<2?'A carousel needs at least one photo':'Take this slide out of the carousel'}">${ICON.trash} Remove slide</button>
+                      </div>
+                    </div>
+                  </div>`).join('')}
+              </div>
+              <div class="row" style="margin-top:12px">
+                <button class="btn" data-act="scadd">${ICON.plus} Add a photo</button>
+              </div>
+              <div class="note" style="margin-top:12px">${ICON.info}<div>The carousel rotates on its own. Two or more photos work best.</div></div>`)}
+          </div>
         </div>`;
       bindAll();
-      UI.imagePicker(U.el('#aboutImg',host),{ value:h.aboutImage, label:'Upload about image', h:150, onChange:v=>{h.aboutImage=v;save();} });
+      slides.forEach((s,i)=>{
+        const box = U.el('#scImg'+i,host);
+        if(box) UI.imagePicker(box,{ value:s.url, label:'Upload photo', h:130, max:1600,
+          bucket:BUSINESS.buckets.gallery,
+          onChange:v=>{ s.url=v; if(!s.alt) s.alt=s.label||''; save(); } });
+      });
+      U.on(host,'click','[data-act="scadd"]',()=>{
+        h.showcase = slides.concat([{ id:U.id('sc'), url:'', label:'', alt:'' }]);
+        save(); Router.refresh();
+      });
+      U.on(host,'click','[data-scdel]',async(e,b)=>{
+        const i = Number(b.dataset.scdel);
+        if(await UI.confirm({title:'Remove this photo?',
+            message:'It is taken out of the carousel on your homepage.',confirmText:'Remove'})){
+          h.showcase = slides.filter((_,n)=>n!==i);
+          save(); Store.log('About carousel updated',h.showcase.length+' photos','image');
+          Router.refresh();
+        }
+      });
+    }
+
+    if(this.tab==='sections'){
+      const labels = BUSINESS.vocab.homeSections;
+      const secs = h.sections || {};
+      host.innerHTML = `
+        <div class="note" style="margin-bottom:14px">${ICON.info}<div>Every block on your homepage has a small label, a heading and an intro line. This is where those words are set. Leave a field empty and the website keeps what is already on the page.</div></div>
+        <div class="grid g2" style="align-items:start">
+          ${Object.keys(labels).filter(k=>secs[k]).map(k=>H.card(labels[k],'',`
+            <div class="grid" style="gap:12px">
+              ${H.field('Small label',H.input('sections.'+k+'.eyebrow',secs[k].eyebrow,'e.g. Our Expertise'))}
+              ${H.field('Heading',H.ta('sections.'+k+'.title',secs[k].title,'The main heading for this block',2))}
+              ${H.field('Intro line',H.ta('sections.'+k+'.intro',secs[k].intro,'Optional line under the heading',2),'','optional')}
+            </div>`)).join('')}
+        </div>`;
+      bindAll();
     }
 
     if(this.tab==='cta'){
@@ -3451,8 +3576,8 @@ Portal.register({
         <div class="card" data-id="${U.esc(g.id)}" style="box-shadow:none;background:var(--glass)">
           <div style="position:relative">
             ${g.type==='video'
-              ? `<video src="${U.esc(g.url)}" muted playsinline preload="metadata" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0;background:#000"></video>`
-              : `<img src="${U.esc(g.url)}" alt="${U.esc(g.alt||g.label||'')}" loading="lazy" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0">`}
+              ? `<video src="${U.esc(U.media(g.url))}" muted playsinline preload="metadata" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0;background:#000"></video>`
+              : `<img src="${U.esc(U.media(g.url))}" alt="${U.esc(g.alt||g.label||'')}" loading="lazy" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0">`}
             <span class="chip ${g.type==='video'?'acc':''}" style="position:absolute;top:8px;left:8px">${g.type==='video'?ICON.eye+' Video':ICON.image+' Photo'}</span>
             <span class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab">${ICON.grip}</span>
           </div>
@@ -3512,8 +3637,8 @@ Portal.register({
       const g = Store.find('gallery',b.dataset.id);
       if(!g) return;
       if(b.dataset.gact==='preview'){
-        if(g.type==='video') return window.open(g.url,'_blank','noopener');
-        return UI.lightbox(g.url);
+        if(g.type==='video') return window.open(U.media(g.url),'_blank','noopener');
+        return UI.lightbox(U.media(g.url));
       }
       if(await UI.confirm({title:'Remove from your gallery?',
           message:(g.label||'This item')+' is removed from your gallery page. The file itself is not deleted.',

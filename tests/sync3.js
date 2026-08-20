@@ -4,7 +4,14 @@ const {JSDOM}=require('jsdom');
 const DATA={'site_settings':[
   {key:'homepage',value:{heroTitle:'Portal Headline Goes Here',heroSubtitle:'Portal subtitle copy.',
      btn1Text:'Portal Btn One',btn1Link:'a.html',btn2Text:'Portal Btn Two',btn2Link:'b.html',
-     aboutTitle:'Portal About Title',aboutText:'Portal about paragraph.',ctaTitle:'Portal CTA?'}},
+     aboutEyebrow:'Portal Eyebrow',aboutTitle:'Portal About Title',aboutText:'Portal about paragraph.',
+     aboutText2:'Portal second paragraph.',aboutBtnText:'Portal Story',aboutBtnLink:'z.html',
+     badgeTitle:'Portal Badge',badgeText:'Portal badge line.',
+     showcase:[{id:'s1',url:'assets/images/about/home-dyno.jpg',label:'Portal Slide One'},
+               {id:'s2',url:'assets/images/about/home-tools.jpg',label:'Portal Slide Two'}],
+     sections:{services:{eyebrow:'Portal Expertise',title:'Portal Services Heading',intro:'Portal services intro.'},
+               faq:{eyebrow:'Portal Questions',title:'Portal FAQ Heading',intro:'Portal FAQ intro added.'}},
+     ctaTitle:'Portal CTA?'}},
   {key:'gallery',value:{list:[
      {id:'g1',url:'assets/images/gallery/gp-exhaust-1.jpg',type:'image',label:'Portal Exhaust',category:'Exhaust Systems'},
      {id:'g2',url:'assets/images/gallery/gp-build-1.jpg',type:'image',label:'Portal Build',category:'Performance Builds'},
@@ -50,6 +57,29 @@ function run(page,mode){return new Promise(res=>{
   t('about title + text replaced',()=>{
     if(!/Portal About Title/.test(d.querySelector('[data-vr-about-title]').textContent)) throw new Error('title');
     if(!/Portal about paragraph/.test(d.querySelector('[data-vr-about-text]').textContent)) throw new Error('text');});
+  t('about eyebrow replaced',()=>{
+    if(!/Portal Eyebrow/.test(d.querySelector('[data-vr-about-eyebrow]').textContent)) throw new Error('eyebrow');});
+  t('about second paragraph replaced',()=>{
+    if(!/Portal second paragraph/.test(d.querySelector('[data-vr-about-text2]').textContent)) throw new Error('text2');});
+  t('about button text + link',()=>{const a=d.querySelector('[data-vr-about-btn]');
+    if(!/Portal Story/.test(a.textContent)) throw new Error(a.textContent);
+    if(a.getAttribute('href')!=='z.html') throw new Error(a.getAttribute('href'));});
+  t('accreditation badge replaced',()=>{
+    if(!/Portal Badge/.test(d.querySelector('[data-vr-badge-title]').textContent)) throw new Error('title');
+    if(!/Portal badge line/.test(d.querySelector('[data-vr-badge-text]').textContent)) throw new Error('text');});
+  t('showcase slides rebuilt',()=>{const f=d.querySelectorAll('[data-vr-showcase] .showcase__slide');
+    if(f.length!==2) throw new Error(f.length+' slides');
+    if(!/Portal Slide One/.test(f[0].textContent)) throw new Error(f[0].textContent);});
+  t('section heading replaced',()=>{const b=d.querySelector('[data-vr-heading="services"]');
+    if(!/Portal Expertise/.test(b.querySelector('.eyebrow').textContent)) throw new Error('eyebrow');
+    if(!/Portal Services Heading/.test(b.querySelector('h2').textContent)) throw new Error('title');
+    if(!/Portal services intro/.test(b.querySelector('p').textContent)) throw new Error('intro');});
+  t('intro added where the page had none',()=>{const b=d.querySelector('[data-vr-heading="faq"]');
+    const p=b.querySelector('p');
+    if(!p) throw new Error('no intro created');
+    if(!/Portal FAQ intro added/.test(p.textContent)) throw new Error(p.textContent);});
+  t('untouched heading keeps its words',()=>{const b=d.querySelector('[data-vr-heading="stages"]');
+    if(!/Choose Your Performance Stage/.test(b.querySelector('h2').textContent)) throw new Error('overwritten');});
   t('CTA replaced',()=>{if(!/Portal CTA\?/.test(d.querySelector('[data-vr-cta-title]').textContent)) throw new Error('no');});
   t('hero buttons replaced',()=>{const a=d.querySelectorAll('.hero__actions a');
     if(!/Portal Btn One/.test(a[0].textContent)) throw new Error(a[0].textContent);

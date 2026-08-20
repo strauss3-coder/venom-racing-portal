@@ -95,6 +95,29 @@ setTimeout(async()=>{
   t('no unhandled promise rejections',()=>{
     if(w.__rejections) throw new Error(w.__rejections+' rejections'); });
 
+  /* The portal is served from a different origin than the website, so any
+     media stored the way the website refers to it must be resolved before
+     it is shown here. Unresolved, every gallery thumbnail is a 404. */
+  console.log('\n=== SITE MEDIA RESOLVES TO THE WEBSITE ===');
+  const U_=w.VenomPortal.U, site=w.VenomPortal.BUSINESS.website.replace(/\/+$/,'');
+  t('site-relative path is absolute',()=>{
+    const r=U_.media('assets/images/gallery/gp-exhaust-1.jpg');
+    if(r!==site+'/assets/images/gallery/gp-exhaust-1.jpg') throw new Error(r); });
+  t('leading slash handled',()=>{
+    const r=U_.media('/assets/x.jpg'); if(r!==site+'/assets/x.jpg') throw new Error(r); });
+  t('uploaded https url untouched',()=>{
+    const u='https://cdn.example.com/a.jpg'; if(U_.media(u)!==u) throw new Error(U_.media(u)); });
+  t('data uri untouched',()=>{
+    const u='data:image/png;base64,AAA'; if(U_.media(u)!==u) throw new Error(U_.media(u)); });
+  t('empty stays empty',()=>{ if(U_.media('')!=='') throw new Error('not empty'); });
+  Router.go('gallery'); await settle(400);
+  t('gallery tiles use resolved urls',()=>{
+    const imgs=[...D.querySelectorAll('#view img[src], #view video[src]')]
+      .map(e=>e.getAttribute('src')).filter(x=>/assets\/(images|videos)\//.test(x));
+    const bad_=imgs.filter(x=>!/^https?:/i.test(x));
+    if(!imgs.length) throw new Error('no gallery media rendered - assertion would be vacuous');
+    if(bad_.length) throw new Error(bad_.length+' unresolved, e.g. '+bad_[0]); });
+
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 },2500);
