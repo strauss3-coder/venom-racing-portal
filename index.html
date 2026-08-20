@@ -1091,6 +1091,8 @@ const BUSINESS = {
     contactLabels:{
       phone:'Phone card title', phone1:'First number label', phone2:'Second number label',
       email:'Email card title', email1:'First address label', email2:'Second address label',
+      address:'Address card title', address1:'Address label',
+      hours:'Hours card title', hours1:'Hours label',
       social:'Social card title', portal:'Tuning portal card title'
     },
     tuningTypes:['ECU remap','Dastek Unichip','ECU + TCU','TCU only','Piggyback'],
@@ -2333,6 +2335,8 @@ const SEED = () => ({
       labels:{
         phone:'Phone', phone1:'Primary Contact', phone2:'Secondary Contact',
         email:'Email', email1:'General Enquiries', email2:'Venom Performance Tuning',
+        address:'Workshop', address1:'Address',
+        hours:'Opening Hours', hours1:'We are open',
         social:'Follow Us', portal:'Online ECU Tuning Portal'
       },
       sections:{
@@ -3902,7 +3906,7 @@ Portal.register({
     const lbl = BUSINESS.vocab.contactLabels;
     const c = Store.data.contact;
     return `
-    ${H.head('Contact Page','The words on contact.html. Your numbers, addresses, social links and the map all come from Contact Details, so they are set once and used here.',
+    ${H.head('Contact Page','The words on contact.html. Your numbers, email addresses, workshop address, opening hours, social links and the map all come from Contact Details, so they are set once and used here.',
       `<a class="btn" href="${U.esc(BUSINESS.website)}/contact.html" target="_blank" rel="noopener">${ICON.eye} View page</a>`)}
 
     <div class="grid g2" style="align-items:start">
@@ -6175,11 +6179,21 @@ const Modules = {
 
   /* ---------- access problem, explained in full ------------------- */
   ownerHelp(){
+    /* lower() on both sides: Supabase stores the address as typed at signup,
+       so a capital letter anywhere would otherwise match nothing and insert
+       nothing, silently. The second statement says which happened. */
+    const addr = (Cloud.email || 'your@email.com').replace(/'/g,"''");
     const sql = "insert into public.portal_owners (user_id, email)\n"
               + "select id, email from auth.users\n"
-              + "where email = '" + (Cloud.email || 'your@email.com') + "'\n"
+              + "where lower(email) = lower('" + addr + "')\n"
               + "on conflict (user_id) do nothing;\n\n"
-              + "select email, added_at from public.portal_owners;";
+              + "select case when exists (\n"
+              + "         select 1 from public.portal_owners o\n"
+              + "         join auth.users u on u.id = o.user_id\n"
+              + "         where lower(u.email) = lower('" + addr + "'))\n"
+              + "       then 'DONE - sign out of the portal and sign back in'\n"
+              + "       else 'NOT ADDED - no account with that address exists yet'\n"
+              + "       end as result;";
     UI.modal({
       size:'md', title:'Your account cannot see the data yet', autofocus:false,
       sub:'Signed in successfully, but not yet on the owner allowlist',
@@ -6192,7 +6206,7 @@ const Modules = {
           <label style="font-size:12px;font-weight:600;color:var(--text-2)">Run this once in the Supabase SQL Editor</label>
           <div class="code" style="margin-top:6px">${U.esc(sql)}</div>
         </div>
-        <div class="note">${ICON.info}<div>The last line must return exactly one row. Then sign out here and sign back in. Your content on this device has been left untouched, so nothing is lost.</div></div>
+        <div class="note">${ICON.info}<div>The second statement tells you which happened. If it says NOT ADDED, the account does not exist yet - create it under Authentication, Users, then run this again. Your content on this device has been left untouched, so nothing is lost.</div></div>
       </div>`,
       footer:`<button class="btn" data-close>Close</button>
               <div class="sp">

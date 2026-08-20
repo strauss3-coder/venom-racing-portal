@@ -8,7 +8,11 @@ const ADDR='7 New Workshop Road, Middelburg, 1050';
 const DATA={
   'site_settings':[
     {key:'contact',value:{ phone:'011 555 1234', email:'new@venomracing.co.za',
-      address:ADDR, tuningPortal:'https://newportal.example.com/' }},
+      address:ADDR, tuningPortal:'https://newportal.example.com/',
+      hours:[{day:'Monday',open:'07:30',close:'18:00',closed:false},
+             {day:'Tuesday',open:'07:30',close:'18:00',closed:false},
+             {day:'Saturday',open:'08:00',close:'12:00',closed:false},
+             {day:'Sunday',open:'',close:'',closed:true}] }},
     {key:'pages',value:{contact:{
       portalText:'Portal tuning card copy.',
       labels:{phone:'PORTAL Phone',phone1:'PORTAL First',phone2:'PORTAL Second',
@@ -66,6 +70,26 @@ function run(page,mode){return new Promise(res=>{
       if(!/^PORTAL /.test(e.textContent)) throw new Error(k+' is: '+e.textContent);});});
   t('tuning card copy replaced',()=>{
     if(!/Portal tuning card copy/.test(d.querySelector('[data-vr-portal-text]').textContent)) throw new Error('not set');});
+
+  /* The page never showed either of these. The portal has held both all
+     along; the address appeared only inside two URLs, and the hours
+     nowhere at all. */
+  console.log('\n=== ADDRESS AND HOURS ARE ON THE PAGE AT LAST ===');
+  t('the workshop address is readable text',()=>{const e=d.querySelector('[data-vr-address]');
+    if(!e) throw new Error('no address element');
+    if(e.textContent.trim()!==ADDR) throw new Error(e.textContent.trim());});
+  t('the address links to directions',()=>{const e=d.querySelector('[data-vr-address]');
+    if(e.tagName!=='A') throw new Error('not a link');
+    if(!e.getAttribute('href').includes(encodeURIComponent(ADDR))) throw new Error(e.getAttribute('href'));});
+  t('trading hours are shown and summarised',()=>{const e=d.querySelector('[data-vr-hours]');
+    if(!e) throw new Error('no hours element');
+    if(!/Monday – Tuesday, 07:30 – 18:00/.test(e.textContent)) throw new Error(e.textContent);
+    if(!/Saturday, 08:00 – 12:00/.test(e.textContent)) throw new Error(e.textContent);});
+  t('a closed day is not listed as open',()=>{const e=d.querySelector('[data-vr-hours]');
+    if(/Sunday/.test(e.textContent)) throw new Error('Sunday shown: '+e.textContent);});
+  t('both new cards carry editable titles',()=>{
+    ['address','address1','hours','hours1'].forEach(k=>{
+      if(!d.querySelector('[data-vr-label="'+k+'"]')) throw new Error('missing label '+k);});});
 
   console.log('\n=== LIVE: the page stops carrying its own copies ===');
   t('map iframe follows the portal address',()=>{const f=d.querySelector('[data-vr-map]');

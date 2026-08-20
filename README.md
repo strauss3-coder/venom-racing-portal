@@ -80,8 +80,13 @@ This is the step people forget, and the portal will look empty until you do it.
 Open `add-me-as-owner.sql`, replace `YOUR-EMAIL-HERE` with the email you just
 used, then run it in the SQL Editor.
 
-The check at the bottom must return exactly one row with your email. If it
-returns nothing, the email did not match — check for a typo.
+The check at the bottom answers in words: `DONE` means you are an owner —
+sign out of the portal and sign back in. `NOT ADDED` means no account with
+that address exists yet, so create it first under Authentication → Users.
+
+You can skip this file entirely if you prefer: sign in to the portal, and
+when it tells you the account is not on the allowlist it offers the same
+SQL with your own address already filled in.
 
 > **Why this exists.** Signing in is not enough to change anything. The
 > publishable key is public, so "are you signed in?" is a weak test. Every

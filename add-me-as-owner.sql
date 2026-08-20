@@ -24,10 +24,15 @@
 insert into public.portal_owners (user_id, email)
 select id, email
 from auth.users
-where lower(email) = lower('paste-your-email-here@example.com')
+where lower(email) = lower('YOUR-EMAIL-HERE')
 on conflict (user_id) do nothing;
 
--- Confirm it worked. This must return exactly one row.
-select u.email, o.added_at
-from public.portal_owners o
-join auth.users u on u.id = o.user_id;
+-- Confirm it worked. This says in words which happened, because an
+-- address that matches no account inserts nothing and raises no error.
+select case when exists (
+         select 1 from public.portal_owners o
+         join auth.users u on u.id = o.user_id
+         where lower(u.email) = lower('YOUR-EMAIL-HERE'))
+       then 'DONE - sign out of the portal and sign back in'
+       else 'NOT ADDED - no account with that address exists yet. Create it under Authentication, Users, then run this again.'
+       end as result;
