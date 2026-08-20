@@ -1082,6 +1082,14 @@ const BUSINESS = {
       hero:'Page header', categories:'Complete Workshop Care', workshop:'Workshop in Action',
       why:'Why Choose Venom Racing', process:'How It Works', cta:'Closing prompt'
     },
+    /* Keyed by the data-vr-heading in the website's contact.html. */
+    contactSections:{ hero:'Page header', map:'Map card' },
+    /* Keyed by the data-vr-label in contact.html. */
+    contactLabels:{
+      phone:'Phone card title', phone1:'First number label', phone2:'Second number label',
+      email:'Email card title', email1:'First address label', email2:'Second address label',
+      social:'Social card title', portal:'Tuning portal card title'
+    },
     tuningTypes:['ECU remap','Dastek Unichip','ECU + TCU','TCU only','Piggyback'],
     validation:['Dyno','V-Box','Dyno + V-Box','Road tested'],
     productTypes:['Octane booster','Injector cleaner','Fuel enhancer','Service treatment','Transmission treatment','Protection additive'],
@@ -2305,6 +2313,28 @@ const SEED = () => ({
         cta:{ eyebrow:'', title:'Need to Book a Service?',
           intro:'Talk to our team about servicing, repairs or a vehicle inspection.' }
       }
+    },
+    contact:{
+      /* The tuning portal button has no link field: its address is business
+         data and lives once, in Contact Details. */
+      buttons:{
+        portal:{ label:'Tuning portal button', text:'Open Tuning Portal', link:null },
+        directions:{ label:'Directions button', text:'Get Directions', link:null },
+        submit:{ label:'Enquiry form button', text:'Send WhatsApp Enquiry', link:null }
+      },
+      portalText:'Purchase ECU tuning files securely through our official tuning portal. Fast, reliable and supported by Venom Racing.',
+      /* The small titles the page puts on its own blocks. */
+      labels:{
+        phone:'Phone', phone1:'Primary Contact', phone2:'Secondary Contact',
+        email:'Email', email1:'General Enquiries', email2:'Venom Performance Tuning',
+        social:'Follow Us', portal:'Online ECU Tuning Portal'
+      },
+      sections:{
+        hero:{ eyebrow:'Get In Touch', title:'Contact Venom Racing',
+          intro:"Tell us about your vehicle and what you're looking to achieve — send us a WhatsApp enquiry and we'll get straight back to you." },
+        map:{ eyebrow:'', title:'Visit Our Workshop',
+          intro:'Professional Performance Tuning • Dyno Services • Mechanical Repairs' }
+      }
     }
   },
 
@@ -3046,10 +3076,21 @@ const H = {
       ${action||''}
     </div>`;
   },
+  /* The <label> here was never tied to its control, so the only thing
+     naming most inputs in the portal was their placeholder - and a field
+     with no placeholder had no accessible name at all. Where the control
+     carries a data-k and no id of its own, one is derived from that key and
+     the label points at it. */
   field(label,inner,hint,note){
+    let html = inner, id = '';
+    const m = /data-k="([^"]+)"/.exec(inner||'');
+    if(m && !/\sid="/.test(inner)){
+      id = 'f_' + m[1].replace(/[^A-Za-z0-9_-]/g,'_');
+      html = inner.replace(/(<(?:input|select|textarea)\b)/, '$1 id="'+id+'"');
+    }
     return `<div class="field">
-      <label>${U.esc(label)}${note?` <em>${U.esc(note)}</em>`:''}</label>
-      ${inner}
+      <label${id?` for="${id}"`:''}>${U.esc(label)}${note?` <em>${U.esc(note)}</em>`:''}</label>
+      ${html}
       ${hint?`<span class="hint">${U.esc(hint)}</span>`:''}
     </div>`;
   },
@@ -3095,10 +3136,12 @@ const H = {
         ${keys.map(k=>`
           <div>
             <div style="font-size:12px;color:var(--text-3);margin-bottom:6px">${U.esc(b[k].label||k)}</div>
-            <div class="grid g2">
-              ${H.field('Text',H.input('buttons.'+k+'.text',b[k].text,'Button text'))}
-              ${H.field('Link',H.input('buttons.'+k+'.link',b[k].link,'contact.html'))}
-            </div>
+            ${b[k].link===null
+              ? H.field('Text',H.input('buttons.'+k+'.text',b[k].text,'Button text'),'Where this button goes is set elsewhere, so it is not repeated here.')
+              : `<div class="grid g2">
+                  ${H.field('Text',H.input('buttons.'+k+'.text',b[k].text,'Button text'))}
+                  ${H.field('Link',H.input('buttons.'+k+'.link',b[k].link,'contact.html'))}
+                </div>`}
           </div>`).join('')}
       </div>`);
   },
@@ -3804,6 +3847,58 @@ Portal.register({
     },()=>{
       Store.persist(); Store.emit('pages');
       Store.log('Services page updated','Services page content was edited','wrench');
+    });
+  }
+});
+
+/* ==================================================================
+   MODULE: Contact page
+   ================================================================== */
+Portal.register({
+  id:'contactpage', title:'Contact Page', sub:'Headings, labels and the enquiry form', icon:'mail', group:'Website', instant:true,
+  render(){
+    const p = Store.data.pages.contact;
+    const secs = p.sections || {};
+    const labels = BUSINESS.vocab.contactSections;
+    const lbl = BUSINESS.vocab.contactLabels;
+    const c = Store.data.contact;
+    return `
+    ${H.head('Contact Page','The words on contact.html. Your numbers, addresses, social links and the map all come from Contact Details, so they are set once and used here.',
+      `<a class="btn" href="${U.esc(BUSINESS.website)}/contact.html" target="_blank" rel="noopener">${ICON.eye} View page</a>`)}
+
+    <div class="grid g2" style="align-items:start">
+      ${Object.keys(labels).filter(k=>secs[k]).map(k=>H.sectionCard(k,labels[k],secs[k])).join('')}
+    </div>
+    <div style="height:14px"></div>
+
+    <div class="grid g2" style="align-items:start">
+      ${H.card('Tuning portal card','The panel offering your online tuning portal',`
+        <div class="grid" style="gap:14px">
+          ${H.field('Description',H.ta('portalText',p.portalText,'What the portal is for',3))}
+          <div class="note">${ICON.info}<div>The address it opens is <b>${U.esc(c.tuningPortal||'not set')}</b>, from Contact Details.</div></div>
+        </div>`)}
+      ${H.card('Block titles','The small headings above each panel of contact details',`
+        <div class="grid g2" style="gap:12px">
+          ${Object.keys(lbl).map(k=>H.field(lbl[k],H.input('labels.'+k,(p.labels||{})[k],''))).join('')}
+        </div>`)}
+    </div>
+    <div style="height:14px"></div>
+
+    ${H.card('Enquiry form','What visitors can ask for',`
+      <div class="note">${ICON.info}<div>The <b>Service Required</b> list on the form is built from your Services, so every service you offer can be asked for. It shows <b>${Store.list('services').filter(x=>x.active!==false).length}</b> at the moment.</div></div>`)}
+    <div style="height:14px"></div>
+    ${H.buttonCard(p.buttons)}`;
+  },
+  mount(root){
+    const p = Store.data.pages.contact;
+    H.bind(root,(k,v)=>{
+      const parts = k.split('.');
+      let o = p;
+      while(parts.length>1){ const key=parts.shift(); o = (o[key] = o[key]||{}); }
+      o[parts[0]] = v;
+    },()=>{
+      Store.persist(); Store.emit('pages');
+      Store.log('Contact page updated','Contact page content was edited','mail');
     });
   }
 });
