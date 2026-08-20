@@ -2673,7 +2673,10 @@ const UI = {
      Renders a drop zone plus reorderable thumbnails. Calls onChange
      with the new array of data URLs. Works on desktop and mobile. */
   uploader(host,opts){
-    const cfg = Object.assign({ max:5, images:[], label:'Drop images here or tap to browse', hint:'', square:false }, opts);
+    /* thumbs:false leaves the drop zone on its own, for callers that show
+       the same media in a grid of their own - two lists of the same
+       photos on one screen only invites editing the wrong one. */
+    const cfg = Object.assign({ max:5, images:[], label:'Drop images here or tap to browse', hint:'', square:false, thumbs:true }, opts);
     let imgs = cfg.images.slice();
     const inputId = U.id('file');
 
@@ -2687,7 +2690,7 @@ const UI = {
         </div>
         <input type="file" id="${inputId}" accept="image/*" multiple class="hidden">
         <div class="prog hidden" data-prog><i></i></div>
-        ${imgs.length?`<div class="${cfg.square?'gal':'thumbs'}" data-thumbs>${imgs.map((src,i)=>`
+        ${cfg.thumbs&&imgs.length?`<div class="${cfg.square?'gal':'thumbs'}" data-thumbs>${imgs.map((src,i)=>`
           <div class="thumb" data-id="${i}" data-idx="${i}">
             <img src="${U.media(src)}" alt="Image ${i+1}" loading="lazy">
             ${i===0&&!cfg.square?`<span class="pri">Main</span>`:''}
@@ -3578,8 +3581,8 @@ Portal.register({
             ${g.type==='video'
               ? `<video src="${U.esc(U.media(g.url))}" muted playsinline preload="metadata" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0;background:#000"></video>`
               : `<img src="${U.esc(U.media(g.url))}" alt="${U.esc(g.alt||g.label||'')}" loading="lazy" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0">`}
-            <span class="chip ${g.type==='video'?'acc':''}" style="position:absolute;top:8px;left:8px">${g.type==='video'?ICON.eye+' Video':ICON.image+' Photo'}</span>
-            <span class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab">${ICON.grip}</span>
+            <span class="chip ${g.type==='video'?'acc':''}" style="position:absolute;top:8px;left:8px;background:rgba(8,9,12,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-color:rgba(255,255,255,.16);color:#fff">${g.type==='video'?ICON.eye+' Video':ICON.image+' Photo'}</span>
+            <span class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab;background:rgba(8,9,12,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:var(--r-xs);color:#fff;height:22px">${ICON.grip}</span>
           </div>
           <div class="card-b tight">
             <input class="inp" data-gl="${U.esc(g.id)}" value="${U.esc(g.label||'')}" placeholder="Caption" aria-label="Caption" style="margin-bottom:6px">
@@ -3612,6 +3615,8 @@ Portal.register({
     UI.uploader(U.el('#galUp',root),{
       max:60, images:Store.list('gallery').filter(g=>g.type!=='video').map(g=>g.url), square:true,
       bucket:BUSINESS.buckets.gallery,
+      /* The grid below is the one place these photos are managed. */
+      thumbs:false,
       label:'Drop photos here or tap to browse',
       hint:'You can select several at once.',
       onChange:urls=>{
@@ -3627,9 +3632,10 @@ Portal.register({
     });
 
     U.on(root,'click','[data-act="addimage"]',()=>{
-      const drop = U.el('#galUp [data-pick]',root) || U.el('#galUp',root);
+      const input = U.el('#galUp input[type="file"]',root);
+      if(input) return input.click();
+      const drop = U.el('#galUp [data-pick]',root);
       if(drop) drop.scrollIntoView({behavior:'smooth',block:'center'});
-      UI.toast('info','Upload photos','Use the drop area at the top of this page.');
     });
     U.on(root,'click','[data-act="addvideo"]',()=>Modules.galleryVideoForm());
 
@@ -3665,6 +3671,10 @@ Portal.register({
       const rest = Store.list('gallery').filter(g=>ids.indexOf(g.id)<0);
       Store.data.gallery = moved.concat(rest);
       Store.persist(); UI.toast('ok','Order updated','Gallery reordered');
+      /* The uploader holds a snapshot of the photo list taken when this
+         module rendered. Re-render so its next onChange reports the new
+         order rather than resurrecting the old one. */
+      Router.refresh();
     });
   }
 });

@@ -146,6 +146,26 @@ setTimeout(async()=>{
       if(wpx!==hpx) throw new Error('round picker is '+wpx+'x'+hpx+' - an ellipse');
     });});
 
+  /* The drop zone used to list its own thumbnails above the grid, so every
+     photo appeared twice on one screen with two different sets of controls. */
+  console.log('\n=== GALLERY SHOWS EACH PHOTO ONCE ===');
+  Router.go('gallery'); await settle(500);
+  t('no second thumbnail list',()=>{
+    const th=D.querySelectorAll('#view [data-thumbs]');
+    if(th.length) throw new Error('drop zone still lists '+th[0].children.length+' thumbnails'); });
+  t('every photo appears exactly once',()=>{
+    const srcs=[...D.querySelectorAll('#view img[src], #view video[src]')]
+      .map(e=>e.getAttribute('src')).filter(x=>/\/assets\/(images|videos)\//.test(x));
+    if(!srcs.length) throw new Error('no media rendered - assertion would be vacuous');
+    const dupes=srcs.filter((x,i)=>srcs.indexOf(x)!==i);
+    if(dupes.length) throw new Error(dupes.length+' duplicated, e.g. '+dupes[0]); });
+  t('grid still covers every item',()=>{
+    const n=D.querySelectorAll('#view [data-grt] .card').length;
+    const want=Store.list('gallery').length;
+    if(n!==want) throw new Error(n+' tiles for '+want+' items'); });
+  t('the drop zone is still there',()=>{
+    if(!D.querySelector('#galUp [data-pick]')) throw new Error('upload path lost'); });
+
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 },2500);
