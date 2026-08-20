@@ -99,7 +99,7 @@ setTimeout(async()=>{
      media stored the way the website refers to it must be resolved before
      it is shown here. Unresolved, every gallery thumbnail is a 404. */
   console.log('\n=== SITE MEDIA RESOLVES TO THE WEBSITE ===');
-  const U_=w.VenomPortal.U, site=w.VenomPortal.BUSINESS.website.replace(/\/+$/,'');
+  const BUSINESS_=w.VenomPortal.BUSINESS; const U_=w.VenomPortal.U, site=w.VenomPortal.BUSINESS.website.replace(/\/+$/,'');
   t('site-relative path is absolute',()=>{
     const r=U_.media('assets/images/gallery/gp-exhaust-1.jpg');
     if(r!==site+'/assets/images/gallery/gp-exhaust-1.jpg') throw new Error(r); });
@@ -165,6 +165,43 @@ setTimeout(async()=>{
     if(n!==want) throw new Error(n+' tiles for '+want+' items'); });
   t('the drop zone is still there',()=>{
     if(!D.querySelector('#galUp [data-pick]')) throw new Error('upload path lost'); });
+
+  /* Selecting a filter must leave only that filter's items on screen -
+     including the photo drop zone, which is not a video and has no place
+     above a list of them. */
+  console.log('\n=== A SELECTED FILTER SHOWS ONLY ITS OWN ITEMS ===');
+  Router.go('gallery'); await settle(500);
+  const pick = async k => { D.querySelector('[data-gf="'+k+'"]').click(); await settle(500); };
+  const tiles = () => [...D.querySelectorAll('[data-grt] .card')];
+
+  await pick('video');
+  t('videos filter: no photos',()=>{
+    const imgs=D.querySelectorAll('[data-grt] .card img').length;
+    if(imgs) throw new Error(imgs+' photos on the videos filter'); });
+  t('videos filter: count matches',()=>{
+    const want=Store.list('gallery').filter(g=>g.type==='video').length;
+    if(tiles().length!==want) throw new Error(tiles().length+' of '+want); });
+  t('videos filter: no photo drop zone',()=>{
+    if(D.querySelector('#galUp')) throw new Error('photo uploader shown above the videos'); });
+
+  await pick('image');
+  t('photos filter: no videos',()=>{
+    const v=D.querySelectorAll('[data-grt] .card video').length;
+    if(v) throw new Error(v+' videos on the photos filter'); });
+  t('photos filter: drop zone is back',()=>{
+    if(!D.querySelector('#galUp [data-pick]')) throw new Error('no way to upload'); });
+
+  const cat=BUSINESS_.vocab.galleryCats.find(c=>Store.list('gallery').some(g=>g.category===c));
+  await pick(cat);
+  t('category filter shows only that category',()=>{
+    const want=Store.list('gallery').filter(g=>g.category===cat);
+    if(tiles().length!==want.length) throw new Error(tiles().length+' of '+want.length+' for '+cat);
+    const labels=tiles().map(c=>c.querySelector('input').value);
+    want.forEach(g=>{ if(g.label && labels.indexOf(g.label)<0) throw new Error('missing '+g.label); }); });
+
+  await pick('all');
+  t('all shows everything again',()=>{
+    if(tiles().length!==Store.list('gallery').length) throw new Error(tiles().length+' tiles'); });
 
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);

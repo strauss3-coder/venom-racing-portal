@@ -3572,14 +3572,31 @@ Portal.register({
         `<button data-gf="${U.esc(c)}" class="${s.filter===c?'on':''}">${U.esc(c)}<span class="n">${all.filter(g=>g.category===c).length}</span></button>`).join('')}
     </div>
 
-    <div id="galUp" style="margin-bottom:14px"></div>
+    ${s.filter==='video'
+      ? H.card('Adding videos','',`
+          <div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div class="note" style="margin:0;flex:1;min-width:220px">${ICON.info}<div>Videos are added by address - the files are too large to upload through a browser form.</div></div>
+            <button class="btn btn-pri" data-act="addvideo">${ICON.plus} Add video</button>
+          </div>`)
+      : '<div id="galUp"></div>'}
+    <div style="height:14px"></div>
 
     ${list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px" data-grt>
       ${list.map(g=>`
         <div class="card" data-id="${U.esc(g.id)}" style="box-shadow:none;background:var(--glass)">
           <div style="position:relative">
             ${g.type==='video'
-              ? `<video src="${U.esc(U.media(g.url))}" muted playsinline preload="metadata" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0;background:#000"></video>`
+              /* The clip is asked for a frame half a second in, which most
+                 browsers will show as a still. Fetching a frame from twenty
+                 files is never guaranteed though - some of these run to
+                 several megabytes - so a titled panel sits behind the video
+                 and shows through until a frame paints. Without it an
+                 undecoded clip is an unexplained black rectangle. */
+              ? `<div style="position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:6px;padding:10px;text-align:center;background:linear-gradient(160deg,#1b1f27,#0e1015);border-radius:var(--r-xs) var(--r-xs) 0 0">
+                   <span style="color:var(--acc)">${ICON.eye}</span>
+                   <small style="font-size:11px;color:var(--text-3);line-height:1.3">${U.esc(g.label||'Video')}</small>
+                 </div>
+                 <video src="${U.esc(U.media(g.url))}#t=0.5" muted playsinline preload="metadata" style="position:relative;width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0"></video>`
               : `<img src="${U.esc(U.media(g.url))}" alt="${U.esc(g.alt||g.label||'')}" loading="lazy" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0">`}
             <span class="chip ${g.type==='video'?'acc':''}" style="position:absolute;top:8px;left:8px;background:rgba(8,9,12,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-color:rgba(255,255,255,.16);color:#fff">${g.type==='video'?ICON.eye+' Video':ICON.image+' Photo'}</span>
             <span class="drag-handle" style="position:absolute;top:8px;right:8px;cursor:grab;background:rgba(8,9,12,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:var(--r-xs);color:#fff;height:22px">${ICON.grip}</span>
@@ -3610,9 +3627,10 @@ Portal.register({
     const s = this.state;
     U.on(root,'click','[data-gf]',(e,b)=>{ s.filter=b.dataset.gf; Router.refresh(); });
 
-    /* Uploader kept hidden until asked for: the grid below is the real
-       interface now that every existing item is managed here. */
-    UI.uploader(U.el('#galUp',root),{
+    /* Absent on the Videos filter, where a photo drop zone would make no
+       sense. The grid below is the real interface either way. */
+    const upBox = U.el('#galUp',root);
+    if(upBox) UI.uploader(upBox,{
       max:60, images:Store.list('gallery').filter(g=>g.type!=='video').map(g=>g.url), square:true,
       bucket:BUSINESS.buckets.gallery,
       /* The grid below is the one place these photos are managed. */
@@ -3634,8 +3652,10 @@ Portal.register({
     U.on(root,'click','[data-act="addimage"]',()=>{
       const input = U.el('#galUp input[type="file"]',root);
       if(input) return input.click();
-      const drop = U.el('#galUp [data-pick]',root);
-      if(drop) drop.scrollIntoView({behavior:'smooth',block:'center'});
+      /* On the Videos filter there is no drop zone to open, so move to a
+         view that has one and open it there. */
+      s.filter = 'image'; Router.refresh();
+      setTimeout(()=>{ const i = U.el('#galUp input[type="file"]'); if(i) i.click(); },120);
     });
     U.on(root,'click','[data-act="addvideo"]',()=>Modules.galleryVideoForm());
 
