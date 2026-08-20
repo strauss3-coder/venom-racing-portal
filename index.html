@@ -1077,6 +1077,11 @@ const BUSINESS = {
       turbo:'Turbo Upgrades & Conversions', stages:'Performance Stages',
       process:'How It Works', tuningportal:'Online Tuning Portal'
     },
+    /* Keyed by the data-vr-heading in the website's services.html. */
+    svcSections:{
+      hero:'Page header', categories:'Complete Workshop Care', workshop:'Workshop in Action',
+      why:'Why Choose Venom Racing', process:'How It Works', cta:'Closing prompt'
+    },
     tuningTypes:['ECU remap','Dastek Unichip','ECU + TCU','TCU only','Piggyback'],
     validation:['Dyno','V-Box','Dyno + V-Box','Road tested'],
     productTypes:['Octane booster','Injector cleaner','Fuel enhancer','Service treatment','Transmission treatment','Protection additive'],
@@ -2223,7 +2228,7 @@ const SEED = () => ({
       text2:'Venom Racing is equipped with the latest state-of-the-art diagnostic, data logging and ECU tuning equipment, allowing every vehicle to be tuned safely, accurately and reliably. Our investment in modern technology ensures every calibration is validated for maximum performance, drivability and long-term reliability.',
       badgeTitle:'RMI Accredited', badgeText:'RMI Accredited workshop',
       techLabel:'Technology We Use',
-      btnText:'Explore Our Services', btnLink:'performance.html',
+      buttons:{ main:{ label:'Closing button', text:'Explore Our Services', link:'performance.html' } },
       showcase:[
         { id:'sc_ecu', url:'assets/images/about/ecu-remapping.jpg', label:'ECU Remapping', alt:'ECU remapping in WinOLS by Venom Racing' },
         { id:'sc_res', url:'assets/images/about/results.jpg', label:'Validated Results', alt:'Dyno-validated results and data logging by Venom Racing' }
@@ -2233,7 +2238,7 @@ const SEED = () => ({
       }
     },
     performance:{
-      btnText:'Request a Quote', btnLink:'contact.html',
+      buttons:{ main:{ label:'Closing button', text:'Request a Quote', link:'contact.html' } },
       /* Eleven blocks, keyed by the data-vr-heading in performance.html and
          listed in the order they appear on the page. */
       sections:{
@@ -2258,6 +2263,26 @@ const SEED = () => ({
         process:{ eyebrow:'How It Works', title:'Our Performance Process', intro:'' },
         tuningportal:{ eyebrow:'Official Remote Tuning Portal', title:'Secure Online Tuning Portal',
           intro:'Purchase your ECU calibration directly through our secure online tuning portal. Available for workshops that require tuning assistance on DPF, EGR, etc., tuning shops that need Stage 1–3 tuning calibrations, or enthusiastic individuals who want the hands-on experience. From deleting DPF and other auxiliary systems to upgrading performance or replacing an existing tune, our online system lets you order professional calibrations supported by Venom Performance Tuning.' }
+      }
+    },
+    services:{
+      buttons:{
+        hero:{ label:'Header button',            text:'Book a Service',        link:'contact.html' },
+        cta1:{ label:'Closing button',           text:'Book a Service',        link:'contact.html' },
+        cta2:{ label:'Closing button, secondary',text:'Contact Venom Racing',  link:'contact.html' }
+      },
+      /* Six blocks, keyed by the data-vr-heading in services.html. */
+      sections:{
+        hero:{ eyebrow:'Workshop', title:'Services & Repairs',
+          intro:'Professional servicing, maintenance and repairs to keep your vehicle running safely, reliably and efficiently.' },
+        categories:{ eyebrow:'What We Offer', title:'Complete Workshop Care',
+          intro:'Fleet maintenance and consumer servicing to full mechanical repairs — all carried out to manufacturer-compliant standards.' },
+        workshop:{ eyebrow:'Behind the Scenes', title:'Workshop in Action',
+          intro:'See our workshop in action with real servicing, repairs and mechanical work carried out by the Venom Racing team.' },
+        why:{ eyebrow:'Why Choose Venom Racing', title:'Servicing You Can Trust', intro:'' },
+        process:{ eyebrow:'How It Works', title:'Our Service Process', intro:'' },
+        cta:{ eyebrow:'', title:'Need to Book a Service?',
+          intro:'Talk to our team about servicing, repairs or a vehicle inspection.' }
       }
     }
   },
@@ -3039,6 +3064,23 @@ const H = {
   /* One section heading: the small label, the heading and the optional intro
      that sit above a block of a page. Identical wherever it appears, and the
      keys are dotted so they write straight into that page's sections map. */
+  /* The named buttons a page carries. The key is the hook in the markup so
+     it never depends on where the button sits; the label is only for here. */
+  buttonCard(buttons){
+    const b = buttons||{}, keys = Object.keys(b);
+    if(!keys.length) return '';
+    return H.card(keys.length>1?'Buttons':'Button','Where the buttons on this page send visitors',`
+      <div class="grid" style="gap:16px">
+        ${keys.map(k=>`
+          <div>
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:6px">${U.esc(b[k].label||k)}</div>
+            <div class="grid g2">
+              ${H.field('Text',H.input('buttons.'+k+'.text',b[k].text,'Button text'))}
+              ${H.field('Link',H.input('buttons.'+k+'.link',b[k].link,'contact.html'))}
+            </div>
+          </div>`).join('')}
+      </div>`);
+  },
   sectionCard(key,label,v,sub){
     v = v || {};
     return H.card(label,sub||'',`
@@ -3658,11 +3700,7 @@ Portal.register({
           <div id="abSlides"></div>
           <div class="note" style="margin-top:12px">${ICON.info}<div>The carousel rotates on its own. Two or more photos work best.</div></div>`)}
         ${H.sectionCard('specialise','What We Specialise In',secs.specialise,'The heading above the specialities')}
-        ${H.card('Closing button','The link at the bottom of the page',`
-          <div class="grid g2">
-            ${H.field('Button text',H.input('btnText',a.btnText,'Explore Our Services'))}
-            ${H.field('Button link',H.input('btnLink',a.btnLink,'performance.html'))}
-          </div>`)}
+        ${H.buttonCard(a.buttons)}
       </div>
     </div>`;
   },
@@ -3700,11 +3738,7 @@ Portal.register({
       ${Object.keys(labels).filter(k=>secs[k]).map(k=>H.sectionCard(k,labels[k],secs[k])).join('')}
     </div>
     <div style="height:14px"></div>
-    ${H.card('Closing button','The link at the bottom of the page',`
-      <div class="grid g2">
-        ${H.field('Button text',H.input('btnText',p.btnText,'Request a Quote'))}
-        ${H.field('Button link',H.input('btnLink',p.btnLink,'contact.html'))}
-      </div>`)}`;
+    ${H.buttonCard(p.buttons)}`;
   },
   mount(root){
     const p = Store.data.pages.performance;
@@ -3716,6 +3750,39 @@ Portal.register({
     },()=>{
       Store.persist(); Store.emit('pages');
       Store.log('Performance page updated','Performance page content was edited','dyno');
+    });
+  }
+});
+
+/* ==================================================================
+   MODULE: Services page
+   ================================================================== */
+Portal.register({
+  id:'svcpage', title:'Services Page', sub:'Headings on your servicing page', icon:'wrench', group:'Website', instant:true,
+  render(){
+    const p = Store.data.pages.services;
+    const secs = p.sections || {};
+    const labels = BUSINESS.vocab.svcSections;
+    return `
+    ${H.head('Services Page','Every block on services.html, in the order it appears. The eight service cards on that page come from Services, and the workshop photos from your Gallery.',
+      `<a class="btn" href="${U.esc(BUSINESS.website)}/services.html" target="_blank" rel="noopener">${ICON.eye} View page</a>`)}
+    <div class="note" style="margin-bottom:14px">${ICON.info}<div>Leave a field empty and the website keeps the words already on the page.</div></div>
+    <div class="grid g2" style="align-items:start">
+      ${Object.keys(labels).filter(k=>secs[k]).map(k=>H.sectionCard(k,labels[k],secs[k])).join('')}
+    </div>
+    <div style="height:14px"></div>
+    ${H.buttonCard(p.buttons)}`;
+  },
+  mount(root){
+    const p = Store.data.pages.services;
+    H.bind(root,(k,v)=>{
+      const parts = k.split('.');
+      let o = p;
+      while(parts.length>1){ const key=parts.shift(); o = (o[key] = o[key]||{}); }
+      o[parts[0]] = v;
+    },()=>{
+      Store.persist(); Store.emit('pages');
+      Store.log('Services page updated','Services page content was edited','wrench');
     });
   }
 });

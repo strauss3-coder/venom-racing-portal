@@ -11,7 +11,7 @@ const DATA={'site_settings':[
      text2:'Portal second paragraph.',
      badgeTitle:'PORTAL Badge', badgeText:'Portal badge line.',
      techLabel:'PORTAL Technology',
-     btnText:'PORTAL Button', btnLink:'zz.html',
+     buttons:{main:{text:'PORTAL Button',link:'zz.html'}},
      showcase:[{id:'s1',url:'assets/images/about/results.jpg',label:'PORTAL Slide'}],
      sections:{specialise:{eyebrow:'PORTAL Label',title:'PORTAL Specialise',intro:'Portal specialise intro.'}}
   }}}
@@ -71,7 +71,7 @@ function run(page,mode){return new Promise(res=>{
     if(!/PORTAL Specialise/.test(b.querySelector('h2').textContent)) throw new Error('title');
     if(!/PORTAL Label/.test(b.querySelector('.eyebrow').textContent)) throw new Error('eyebrow not created');
     if(!/Portal specialise intro/.test(b.querySelector('p').textContent)) throw new Error('intro not created');});
-  t('closing button replaced',()=>{const a=d.querySelector('[data-vr-page-btn]');
+  t('closing button replaced',()=>{const a=d.querySelector('[data-vr-page-btn="main"]');
     if(!/PORTAL Button/.test(a.textContent)) throw new Error(a.textContent);
     if(a.getAttribute('href')!=='zz.html') throw new Error(a.getAttribute('href'));});
 

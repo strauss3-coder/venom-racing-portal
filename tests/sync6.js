@@ -7,7 +7,7 @@ const KEYS=['hero','ecu','unichip','suppliers','dyno','exhaust','additives','tur
 const sections={};
 KEYS.forEach(k=>{ sections[k]={eyebrow:'PORTAL '+k+' label',title:'PORTAL '+k+' heading',intro:'Portal '+k+' intro.'}; });
 const DATA={'site_settings':[
-  {key:'pages',value:{performance:{ btnText:'PORTAL Quote', btnLink:'zz.html', sections }}}
+  {key:'pages',value:{performance:{ buttons:{main:{text:'PORTAL Quote',link:'zz.html'}}, sections }}}
 ]};
 function run(page,mode){return new Promise(res=>{
   const html=fs.readFileSync(PATH_.join(SITE,page),'utf8');
@@ -65,7 +65,7 @@ function run(page,mode){return new Promise(res=>{
     const h3=[...b.querySelectorAll('h3')].map(x=>x.textContent);
     if(!h3.some(x=>/5-Map Switch Architecture/.test(x)))
       throw new Error('h3 overwritten: '+h3.join('|'));});
-  t('closing button replaced',()=>{const a=d.querySelector('[data-vr-page-btn]');
+  t('closing button replaced',()=>{const a=d.querySelector('[data-vr-page-btn="main"]');
     if(!/PORTAL Quote/.test(a.textContent)) throw new Error(a.textContent);
     if(a.getAttribute('href')!=='zz.html') throw new Error(a.getAttribute('href'));});
 
@@ -80,7 +80,7 @@ function run(page,mode){return new Promise(res=>{
       if(!/Preferred Performance Brands/.test(b.querySelector('h3').textContent)) throw new Error('lost');});
     t('['+mode+'] ecu has no invented eyebrow',()=>{const b=f.querySelector('[data-vr-heading="ecu"]');
       if(b.querySelector('.eyebrow')) throw new Error('created an empty eyebrow');});
-    t('['+mode+'] button intact',()=>{const a=f.querySelector('[data-vr-page-btn]');
+    t('['+mode+'] button intact',()=>{const a=f.querySelector('[data-vr-page-btn="main"]');
       if(!/Request a Quote/.test(a.textContent)) throw new Error(a.textContent);});
   }
 
