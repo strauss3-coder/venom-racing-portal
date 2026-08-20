@@ -2779,8 +2779,8 @@ const UI = {
     function paint(){
       host.innerHTML = `
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <div data-pick style="width:${cfg.round?cfg.h+'px':'auto'};min-width:110px;height:${cfg.h}px;flex-shrink:0;border-radius:${cfg.round?'50%':'var(--r-md)'};overflow:hidden;border:1.6px dashed var(--line-2);background:var(--glass);display:grid;place-items:center;cursor:pointer;position:relative">
-            ${val?`<img src="${U.media(val)}" style="width:100%;height:100%;object-fit:cover">`
+          <div data-pick style="width:${cfg.round?cfg.h:Math.round(cfg.h*1.6)}px;max-width:100%;height:${cfg.h}px;flex-shrink:0;border-radius:${cfg.round?'50%':'var(--r-md)'};overflow:hidden;border:1.6px dashed var(--line-2);background:var(--glass);display:grid;place-items:center;cursor:pointer;position:relative">
+            ${val?`<img src="${U.media(val)}" style="display:block;width:100%;height:100%;object-fit:cover">`
                  :`<div style="text-align:center;color:var(--text-3);font-size:11.5px;padding:8px">
                       <div style="display:grid;place-items:center;margin-bottom:4px">${ICON.image}</div>${U.esc(cfg.label)}</div>`}
           </div>

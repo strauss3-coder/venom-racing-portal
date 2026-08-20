@@ -118,6 +118,34 @@ setTimeout(async()=>{
     if(!imgs.length) throw new Error('no gallery media rendered - assertion would be vacuous');
     if(bad_.length) throw new Error(bad_.length+' unresolved, e.g. '+bad_[0]); });
 
+  /* The preview box used width:auto with flex-shrink:0, so a wide photo
+     sized the box to the image's intrinsic width and it spilled out of its
+     card. Its width must stay definite and bounded. */
+  console.log('\n=== IMAGE PREVIEWS STAY INSIDE THEIR CARD ===');
+  Router.go('homepage'); await settle(300);
+  const tabBtn=[...D.querySelectorAll('[data-tab]')].find(b=>b.dataset.tab==='about');
+  if(tabBtn) tabBtn.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+  await settle(400);
+  t('preview boxes have a definite width',()=>{
+    const boxes=[...D.querySelectorAll('#view div[data-pick]')];
+    if(!boxes.length) throw new Error('no pickers rendered - assertion would be vacuous');
+    boxes.forEach(b=>{
+      const st=b.getAttribute('style')||'';
+      if(/width:\s*auto/.test(st)) throw new Error('width:auto lets the image size the box');
+      if(!/max-width:\s*100%/.test(st)) throw new Error('no max-width cap: '+st.slice(0,60));
+      if(!/width:\s*\d+px/.test(st)) throw new Error('width is not definite: '+st.slice(0,60));
+    });});
+  t('round pickers stay circular',()=>{
+    Router.go('appearance');
+    const boxes=[...D.querySelectorAll('#view div[data-pick]')]
+      .filter(b=>/border-radius:\s*50%/.test(b.getAttribute('style')||''));
+    boxes.forEach(b=>{
+      const st=b.getAttribute('style')||'';
+      const wpx=(st.match(/[^-]width:\s*(\d+)px/)||[])[1];
+      const hpx=(st.match(/height:\s*(\d+)px/)||[])[1];
+      if(wpx!==hpx) throw new Error('round picker is '+wpx+'x'+hpx+' - an ellipse');
+    });});
+
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 },2500);
