@@ -1092,13 +1092,34 @@ const BUSINESS = {
     /* The website's own pages, by filename without the extension. */
     pages:['index','performance','services','about','gallery','reviews','faqs','contact','privacy','terms'],
     /* Repeated card lists the website renders, and where each appears. */
-    sectionTypes:[
-      { v:'feature',    l:'Why choose us cards',  where:'Homepage, Services and About' },
-      { v:'process',    l:'Process steps',        where:'Homepage, Performance and Services' },
-      { v:'trust',      l:'Trust bar items',      where:'Homepage and Reviews' },
-      { v:'chip',       l:'Technology chips',     where:'About' },
-      { v:'specialise', l:'What we specialise in',where:'About' }
-    ],
+    /* The repeating blocks each page actually has, and where on that page
+       they sit. Keyed by page, because the same block type reads quite
+       differently from one page to the next - `feature` is Why Choose Us on
+       the homepage and Mission and credentials on the about page. A page and
+       block pair that is not listed here does not exist in the markup, and
+       the website would silently ignore anything filed under it. */
+    pageBlocks:{
+      index:{
+        feature:{ l:'Why Choose Us cards', where:'the four cards under "26 Years of Experience"' },
+        process:{ l:'Process steps',       where:'the numbered steps under "Our Performance Process"' },
+        trust:{   l:'Trust bar',           where:'the row of ticks above your reviews' }
+      },
+      about:{
+        feature:{    l:'Mission and credentials', where:'the four cards under your story' },
+        chip:{       l:'Technology chips',        where:'the row under "Technology We Use"' },
+        specialise:{ l:'Specialities',            where:'the four cards under "What We Specialise In"' }
+      },
+      performance:{
+        process:{ l:'Process steps', where:'the numbered steps under "Our Performance Process"' }
+      },
+      services:{
+        feature:{ l:'Servicing You Can Trust cards', where:'the cards under that heading' },
+        process:{ l:'Process steps',                 where:'the numbered steps under "Our Service Process"' }
+      },
+      reviews:{
+        trust:{ l:'Trust bar', where:'the row of ticks under the page heading' }
+      }
+    },
     /* Enquiry pipeline. `unread` and `contacted` are the framework's;
        `quoted` and `booked` reflect how a workshop actually works. */
     enquiryStatuses:['unread','contacted','quoted','booked','completed']
@@ -4022,20 +4043,30 @@ Portal.register({
     if(!pages.length) pages.push('index');
     if(pages.indexOf(s.page)<0) s.page = pages[0];
     const mine = all.filter(x=>x.page===s.page);
-    const types = BUSINESS.vocab.sectionTypes.filter(t=>mine.some(x=>x.section===t.v));
+    const blocks = BUSINESS.vocab.pageBlocks[s.page] || {};
+    const types = Object.keys(blocks).filter(v=>mine.some(x=>x.section===v));
+    /* Anything filed under a block this page does not have. The website
+       cannot show it, so it is surfaced here rather than left invisible. */
+    const orphans = mine.filter(x=>!blocks[x.section]);
 
     return `
-    ${H.head('Page Sections','The repeating cards and steps on your website. Edit the words here and the page follows.',
-      `<button class="btn btn-pri" data-act="add">${ICON.plus} Add item</button>`)}
+    ${H.head('Page Sections','The repeating cards, steps and chips on your website - the lists that use the same shape over and over. Headings, buttons and carousels live in each page\'s own editor.',
+      `<a class="btn" href="${U.esc(BUSINESS.website)}/${U.esc(s.page)}.html" target="_blank" rel="noopener">${ICON.eye} View page</a>
+       <button class="btn btn-pri" data-act="add">${ICON.plus} Add item</button>`)}
 
     <div class="segbar" style="margin-bottom:18px">
       ${pages.map(p=>`<button data-pg="${U.esc(p)}" class="${s.page===p?'on':''}">${U.esc(p)}.html<span class="n">${all.filter(x=>x.page===p).length}</span></button>`).join('')}
     </div>
 
-    ${types.length ? types.map(t=>{
-      const items = mine.filter(x=>x.section===t.v);
-      return H.card(t.l, items.length+' on '+t.where,
-        `<div data-sec="${U.esc(t.v)}">${items.map(x=>`
+    ${orphans.length ? `<div class="note dan" style="margin-bottom:14px">${ICON.info}<div>
+      ${orphans.length} item${orphans.length>1?'s are':' is'} filed under a block ${U.esc(s.page)}.html does not have, so the website cannot show ${orphans.length>1?'them':'it'}:
+      ${orphans.map(x=>U.esc(x.title)).join(', ')}. Delete ${orphans.length>1?'them':'it'} below, or move ${orphans.length>1?'them':'it'} to a page that has that block.</div></div>` : ''}
+
+    ${types.length ? types.map(v=>{
+      const t = blocks[v];
+      const items = mine.filter(x=>x.section===v);
+      return H.card(t.l, items.length+' item'+(items.length===1?'':'s')+' - '+t.where,
+        `<div data-sec="${U.esc(v)}">${items.map(x=>`
           <div class="sortrow" data-id="${U.esc(x.id)}">
             <span class="drag-handle">${ICON.grip}</span>
             <div style="min-width:0;flex:1">
@@ -5340,18 +5371,29 @@ const Modules = {
   /* ---------- page sections, SEO and media --------------------------- */
   sectionForm(id,page){
     const editing = !!id;
+    const BLOCKS = BUSINESS.vocab.pageBlocks;
+    const pages = Object.keys(BLOCKS);
+    const startPage = (page && BLOCKS[page]) ? page : (editing ? null : pages[0]);
     const x = editing ? Object.assign({},Store.find('pageSections',id))
-      : { page:page||'index', section:'feature', title:'', body:'', icon:'', image:'', active:true };
+      : { page:startPage, section:Object.keys(BLOCKS[startPage])[0], title:'', body:'', icon:'', image:'', active:true };
     const draft = Object.assign({},x);
+
+    /* Only blocks the chosen page actually has. Offering the rest lets an
+       item be saved and synced that the website has nowhere to put, and it
+       simply never appears. */
+    const blocksFor = p => Object.keys(BLOCKS[p]||{}).map(v=>({ v, l:BLOCKS[p][v].l }));
+    const whereFor = (p,v) => ((BLOCKS[p]||{})[v]||{}).where || '';
+
     const m = UI.modal({
       size:'md',
       title: editing ? 'Edit item' : 'Add an item',
-      sub:'Appears on your website in the section you choose.',
+      sub:'Appears on your website in the block you choose.',
       body:`<div class="grid" style="gap:14px">
         <div class="grid g2">
-          ${H.field('Page',H.sel('page',draft.page,BUSINESS.vocab.pages.map(p=>({v:p,l:p+'.html'})),'Page'))}
-          ${H.field('Section',H.sel('section',draft.section,BUSINESS.vocab.sectionTypes.map(t=>({v:t.v,l:t.l})),'Section'))}
+          ${H.field('Page',H.sel('page',draft.page,pages.map(p=>({v:p,l:p+'.html'})),'Page'))}
+          <div id="secWrap">${H.field('Block',H.sel('section',draft.section,blocksFor(draft.page),'Block'))}</div>
         </div>
+        <div class="note" id="secWhere">${ICON.info}<div>Shown in ${U.esc(whereFor(draft.page,draft.section))||'this block'}.</div></div>
         ${H.field('Heading',H.input('title',draft.title,'RMI Accredited'))}
         ${H.field('Text',H.ta('body',draft.body,'The sentence shown under the heading.',3),'Trust bar items and technology chips show the heading only.','optional')}
         ${H.toggleCard('active',draft.active,'Live on website','Switch off to hide it without deleting it','ok','globe')}
@@ -5359,7 +5401,24 @@ const Modules = {
       footer:`<button class="btn" data-close>Cancel</button>
               <div class="sp"><button class="btn btn-pri" data-save>${ICON.check} ${editing?'Save changes':'Add item'}</button></div>`
     });
-    H.bind(m.el,(k,v)=>draft[k]=v,()=>{});
+
+    const describe = ()=>{
+      const w = U.el('#secWhere div',m.el);
+      if(w) w.textContent = 'Shown in ' + (whereFor(draft.page,draft.section) || 'this block') + '.';
+    };
+    H.bind(m.el,(k,v)=>{
+      draft[k]=v;
+      if(k==='page'){
+        /* The blocks differ per page, so the choice is rebuilt rather than
+           left showing one the new page does not have. */
+        const opts = blocksFor(draft.page);
+        draft.section = opts.length?opts[0].v:'';
+        const wrap = U.el('#secWrap',m.el);
+        wrap.innerHTML = H.field('Block',H.sel('section',draft.section,opts,'Block'));
+        U.el('[data-k="section"]',wrap).addEventListener('change',e=>{ draft.section=e.target.value; describe(); });
+      }
+      describe();
+    },()=>{});
     U.el('[data-save]',m.el).addEventListener('click',()=>{
       if(!draft.title.trim()) return UI.toast('err','A heading is needed','Type the heading first.');
       if(editing){ Store.update('pageSections',id,draft); Store.log('Section updated',draft.title,'layers'); }

@@ -203,6 +203,50 @@ setTimeout(async()=>{
   t('all shows everything again',()=>{
     if(tiles().length!==Store.list('gallery').length) throw new Error(tiles().length+' tiles'); });
 
+  /* Page Sections drives the repeated lists on the website. Every page and
+     block pair it offers must exist in the markup: the portal will happily
+     save one that does not, sync it, and the website will ignore it. */
+  console.log('\n=== PAGE SECTIONS ONLY OFFERS BLOCKS THAT EXIST ===');
+  const BLOCKS=BUSINESS_.vocab.pageBlocks;
+  t('every stored item is on a block its page has',()=>{
+    const strays=Store.list('pageSections')
+      .filter(x=>!((BLOCKS[x.page]||{})[x.section]))
+      .map(x=>x.page+'/'+x.section);
+    if(strays.length) throw new Error([...new Set(strays)].join(', '));});
+  t('every offered block is described',()=>{
+    Object.keys(BLOCKS).forEach(p=>Object.keys(BLOCKS[p]).forEach(v=>{
+      const b=BLOCKS[p][v];
+      if(!b.l||!b.where) throw new Error(p+'/'+v+' has no label or location');}));});
+  Router.go('sections'); await settle(400);
+  D.querySelector('#view [data-act="add"]').dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+  await settle(400);
+  t('the add form offers only blocks the chosen page has',()=>{
+    const pageSel=D.querySelector('.modal [data-k="page"]');
+    const secSel=D.querySelector('.modal [data-k="section"]');
+    if(!pageSel||!secSel) throw new Error('form did not open');
+    const page=pageSel.value;
+    const offered=[...secSel.options].map(o=>o.value).sort();
+    const real=Object.keys(BLOCKS[page]||{}).sort();
+    if(offered.join()!==real.join())
+      throw new Error(page+' offers ['+offered.join()+'] but has ['+real.join()+']');});
+  t('changing the page rebuilds the block list',()=>{
+    const pageSel=D.querySelector('.modal [data-k="page"]');
+    const target=Object.keys(BLOCKS).find(p=>p!==pageSel.value);
+    pageSel.value=target;
+    pageSel.dispatchEvent(new w.Event('change',{bubbles:true}));
+    const offered=[...D.querySelector('.modal [data-k="section"]').options].map(o=>o.value).sort();
+    const real=Object.keys(BLOCKS[target]).sort();
+    if(offered.join()!==real.join())
+      throw new Error('after switching to '+target+': ['+offered.join()+'] vs ['+real.join()+']');});
+  const closeBtn=D.querySelector('.modal [data-close]');
+  if(closeBtn) closeBtn.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+  await settle(300);
+  t('block labels differ per page where the meaning differs',()=>{
+    /* feature is Why Choose Us on the homepage and something else on about;
+       one shared label would misdescribe one of them. */
+    if(BLOCKS.index.feature.l===BLOCKS.about.feature.l)
+      throw new Error('both pages call feature "'+BLOCKS.index.feature.l+'"');});
+
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 },2500);
