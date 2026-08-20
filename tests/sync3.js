@@ -3,6 +3,10 @@ const SITE=process.env.SITE_DIR||PATH_.resolve(__dirname,'../venom-racing-websit
 const {JSDOM}=require('jsdom');
 const DATA={'site_settings':[
   {key:'homepage',value:{heroTitle:'Portal Headline Goes Here',heroSubtitle:'Portal subtitle copy.',
+     heroBadge1:'PORTAL Badge One',heroBadge2:'PORTAL Badge Two',
+     heroVideo:'assets/videos/venom-hero-2.mp4?portal',
+     ctaBtn1Text:'PORTAL Cta One',ctaBtn1Link:'p1.html',
+     ctaBtn2Text:'PORTAL Cta Two',ctaBtn2Link:'p2.html',
      btn1Text:'Portal Btn One',btn1Link:'a.html',btn2Text:'Portal Btn Two',btn2Link:'b.html',
      aboutEyebrow:'Portal Eyebrow',aboutTitle:'Portal About Title',aboutText:'Portal about paragraph.',
      aboutText2:'Portal second paragraph.',aboutBtnText:'Portal Story',aboutBtnLink:'z.html',
@@ -85,6 +89,26 @@ function run(page,mode){return new Promise(res=>{
     if(!/Portal Btn One/.test(a[0].textContent)) throw new Error(a[0].textContent);
     if(a[0].getAttribute('href')!=='a.html') throw new Error(a[0].getAttribute('href'));});
 
+  console.log('\n=== CONTROLS THAT USED TO DO NOTHING ===');
+  t('both hero badges replaced',()=>{
+    const a=d.querySelector('[data-vr-hero-badge="1"]'), b=d.querySelector('[data-vr-hero-badge="2"]');
+    if(!/PORTAL Badge One/.test(a.textContent)) throw new Error('badge 1: '+a.textContent.trim());
+    if(!/PORTAL Badge Two/.test(b.textContent)) throw new Error('badge 2: '+b.textContent.trim());});
+  t('the badge icons survived',()=>{
+    if(!d.querySelector('[data-vr-hero-badge="1"] svg')) throw new Error('icon lost');});
+  t('hero video source replaced',()=>{
+    const src=d.querySelector('[data-vr-hero-video] source');
+    if(src.getAttribute('src')!=='assets/videos/venom-hero-2.mp4?portal') throw new Error(src.getAttribute('src'));});
+  t('both closing buttons replaced',()=>{
+    const a=d.querySelector('[data-vr-cta-btn="1"]'), b=d.querySelector('[data-vr-cta-btn="2"]');
+    if(a.textContent.trim()!=='PORTAL Cta One') throw new Error('btn1: '+a.textContent.trim());
+    if(b.textContent.trim()!=='PORTAL Cta Two') throw new Error('btn2: '+b.textContent.trim());
+    if(a.getAttribute('href')!=='p1.html'||b.getAttribute('href')!=='p2.html') throw new Error('links not set');});
+  t('the two buttons did not collide',()=>{
+    const a=d.querySelector('[data-vr-cta-btn="1"]').textContent.trim();
+    const b=d.querySelector('[data-vr-cta-btn="2"]').textContent.trim();
+    if(a===b) throw new Error('both read "'+a+'"');});
+
   console.log('\n=== GALLERY grid from the portal ===');
   w=await run('gallery.html','ok'); d=w.document;
   t('grid replaced',()=>{const c=[...d.querySelectorAll('.gallery-card__title')].map(x=>x.textContent);
@@ -121,6 +145,10 @@ function run(page,mode){return new Promise(res=>{
     const lb=d.querySelector('[data-lightbox]');
     if(!lb.classList.contains('is-open')) throw new Error('lightbox did not open');});
 
+  /* Six controls in the portal used to write to fields nothing read: two
+     hero badges offered as one, a hero image where the page plays a video,
+     supporting text with no element, and one pair of button fields for the
+     two buttons the closing band has always had. */
   console.log('\n=== FALLBACK: database down ===');
   d=(await run('index.html','down')).document;
   t('hero copy intact',()=>{if(!/Where Performance/.test(d.querySelector('[data-vr-hero-title]').textContent)) throw new Error('lost');});

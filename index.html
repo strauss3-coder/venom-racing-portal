@@ -1155,7 +1155,9 @@ const BUSINESS = {
   },
 
   copy:{
-    heroBadge:'RMI Accredited · Official Dastek Unichip Dealer',
+    /* Two badges, because the hero shows two. The single combined string
+       this replaces never reached the page at all. */
+    heroBadge1:'RMI Accredited', heroBadge2:'Official Dastek Unichip Dealer',
     heroTitle:'Where Performance Meets Precision.',
     heroSubtitle:'An RMI Accredited workshop and advanced accredited Dastek Unichip dealer in eMalahleni. In-house master tuner offering dyno and V-Box proven ECU tuning to ensure maximum performance, custom exhaust fabrication and precision automotive repairs.',
     btn1Text:'Explore Services', btn1Link:'performance.html',
@@ -1189,8 +1191,8 @@ const BUSINESS = {
         intro:"Tell us about your vehicle and what you're looking to achieve — we'll get back to you to schedule a consultation." }
     },
     ctaTitle:'Not sure which stage is right for your vehicle?',
-    ctaText:'Tell us about your vehicle and what you are looking to achieve and we will get back to you to schedule a consultation.',
-    ctaBtnText:'Book a Consultation', ctaBtnLink:'contact.html'
+    ctaBtn1Text:'Book a Consultation', ctaBtn1Link:'contact.html',
+    ctaBtn2Text:'Contact Venom Racing', ctaBtn2Link:'contact.html'
   },
 
   templates:{
@@ -2226,10 +2228,10 @@ const SEED = () => ({
   homepage:{
     heroTitle:BUSINESS.copy.heroTitle,
     heroSubtitle:BUSINESS.copy.heroSubtitle,
-    heroBadge:BUSINESS.copy.heroBadge,
+    heroBadge1:BUSINESS.copy.heroBadge1, heroBadge2:BUSINESS.copy.heroBadge2,
     btn1Text:BUSINESS.copy.btn1Text, btn1Link:BUSINESS.copy.btn1Link,
     btn2Text:BUSINESS.copy.btn2Text, btn2Link:BUSINESS.copy.btn2Link,
-    heroImage:'',
+    heroVideo:'',
     aboutEyebrow:BUSINESS.copy.aboutEyebrow,
     aboutTitle:BUSINESS.copy.aboutTitle,
     aboutText:BUSINESS.copy.aboutText,
@@ -2246,8 +2248,8 @@ const SEED = () => ({
       { label:'Validation', value:'Dyno & V-Box' }
     ],
     ctaTitle:BUSINESS.copy.ctaTitle,
-    ctaText:BUSINESS.copy.ctaText,
-    ctaBtnText:BUSINESS.copy.ctaBtnText, ctaBtnLink:BUSINESS.copy.ctaBtnLink,
+    ctaBtn1Text:BUSINESS.copy.ctaBtn1Text, ctaBtn1Link:BUSINESS.copy.ctaBtn1Link,
+    ctaBtn2Text:BUSINESS.copy.ctaBtn2Text, ctaBtn2Link:BUSINESS.copy.ctaBtn2Link,
   },
 
   /* Copy for the pages that are not the homepage, keyed by file name so the
@@ -3646,7 +3648,10 @@ Portal.register({
           <div class="grid" style="gap:14px">
             ${H.card('Hero content','The first thing visitors read',`
               <div class="grid" style="gap:14px">
-                ${H.field('Small badge above the title',H.input('heroBadge',h.heroBadge,BUSINESS.copy.heroBadge),'Keep this short. It sits above the main headline.')}
+                <div class="grid g2">
+                  ${H.field('First badge',H.input('heroBadge1',h.heroBadge1,BUSINESS.copy.heroBadge1))}
+                  ${H.field('Second badge',H.input('heroBadge2',h.heroBadge2,BUSINESS.copy.heroBadge2))}
+                </div>
                 ${H.field('Hero title',H.ta('heroTitle',h.heroTitle,BUSINESS.copy.heroTitle,2),'Your strongest sales message in one line.')}
                 ${H.field('Hero subtitle',H.ta('heroSubtitle',h.heroSubtitle,BUSINESS.copy.heroSubtitle,3))}
               </div>`)}
@@ -3659,7 +3664,11 @@ Portal.register({
               </div>`)}
           </div>
           <div class="grid" style="gap:14px">
-            ${H.card('Hero background image','Shown behind your headline','<div id="heroImg"></div>')}
+            ${H.card('Hero background','The clip playing behind your headline',`
+              <div class="grid" style="gap:14px">
+                ${H.field('Video address',H.input('heroVideo',h.heroVideo,'assets/videos/venom-hero-2.mp4'),'A path inside your website, or a full https:// address.')}
+                <div class="note">${ICON.info}<div>Your hero plays a video, not a photo. Video files are too large to upload through a browser form, so put the file alongside your other videos and paste its path here.</div></div>
+              </div>`)}
             ${H.card('Live preview','How the hero will look',`
               <div class="preview">
                 <div class="preview-bar"><i></i><i></i><i></i><span>${U.esc(DOMAIN)}</span></div>
@@ -3668,8 +3677,6 @@ Portal.register({
           </div>
         </div>`;
       bindAll();
-      UI.imagePicker(U.el('#heroImg',host),{ value:h.heroImage, label:'Upload hero image', h:130, max:1800,
-        onChange:v=>{ h.heroImage=v; save(); this.previewHero(host); } });
       this.previewHero(host);
       U.els('[data-k]',host).forEach(el=>el.addEventListener('input',()=>this.previewHero(host)));
     }
@@ -3724,10 +3731,11 @@ Portal.register({
         ${H.card('Call to action band','The closing prompt at the bottom of your homepage',`
           <div class="grid" style="gap:14px">
             ${H.field('Title',H.input('ctaTitle',h.ctaTitle,BUSINESS.copy.ctaTitle))}
-            ${H.field('Supporting text',H.ta('ctaText',h.ctaText,'Send us a message and we will get back to you',2))}
             <div class="grid g2">
-              ${H.field('Button text',H.input('ctaBtnText',h.ctaBtnText,BUSINESS.copy.ctaBtnText))}
-              ${H.field('Button link',H.input('ctaBtnLink',h.ctaBtnLink,BUSINESS.copy.ctaBtnLink))}
+              ${H.field('First button text',H.input('ctaBtn1Text',h.ctaBtn1Text,BUSINESS.copy.ctaBtn1Text))}
+              ${H.field('First button link',H.input('ctaBtn1Link',h.ctaBtn1Link,BUSINESS.copy.ctaBtn1Link))}
+              ${H.field('Second button text',H.input('ctaBtn2Text',h.ctaBtn2Text,BUSINESS.copy.ctaBtn2Text))}
+              ${H.field('Second button link',H.input('ctaBtn2Link',h.ctaBtn2Link,BUSINESS.copy.ctaBtn2Link))}
             </div>
           </div>`)}
         <div style="height:14px"></div>
@@ -3735,15 +3743,14 @@ Portal.register({
           <div class="preview">
             <div class="hero-prev" style="padding:28px 20px">
               <h4 id="ctaT">${U.esc(h.ctaTitle)}</h4>
-              <p id="ctaX">${U.esc(h.ctaText)}</p>
-              <div class="row"><span class="btn btn-pri" id="ctaB">${U.esc(h.ctaBtnText)}</span></div>
+              <div class="row"><span class="btn btn-pri" id="ctaB">${U.esc(h.ctaBtn1Text)}</span><span class="btn btn-sm" id="ctaB2">${U.esc(h.ctaBtn2Text)}</span></div>
             </div>
           </div>`)}`;
       bindAll();
       U.els('[data-k]',host).forEach(el=>el.addEventListener('input',()=>{
         U.el('#ctaT',host).textContent = h.ctaTitle;
-        U.el('#ctaX',host).textContent = h.ctaText;
-        U.el('#ctaB',host).textContent = h.ctaBtnText;
+        U.el('#ctaB',host).textContent = h.ctaBtn1Text;
+        U.el('#ctaB2',host).textContent = h.ctaBtn2Text;
       }));
     }
     UI.animateAll(host);
@@ -3753,8 +3760,7 @@ Portal.register({
     const p = U.el('#heroPrev',host);
     if(!p) return;
     p.innerHTML = `
-      ${h.heroImage?`<div class="bgimg" style="background-image:url('${h.heroImage}')"></div>`:''}
-      ${h.heroBadge?`<span class="chip acc" style="position:relative;margin-bottom:12px">${U.esc(h.heroBadge)}</span>`:''}
+      ${h.heroBadge1?`<span class="chip acc" style="position:relative;margin-bottom:12px">${U.esc(h.heroBadge1)}</span>`:''}
       <h4>${U.esc(h.heroTitle)}</h4>
       <p>${U.esc(h.heroSubtitle)}</p>
       <div class="row">
@@ -4452,7 +4458,7 @@ Portal.register({
         ${H.card('Location','Where your workshop is',`
           <div class="grid" style="gap:14px">
             ${H.field('Street address',H.ta('address',c.address,'546 Rachel de Beer St, Pretoria North',2))}
-            ${H.field('Google Maps link',H.input('mapsUrl',c.mapsUrl,BUSINESS.contact.mapsUrl),'Paste the share link from Google Maps. This powers the map and the directions button.')}
+            ${H.field('Google Maps link',H.input('mapsUrl',c.mapsUrl,BUSINESS.contact.mapsUrl),'Optional. The map itself follows the address above; paste a share link here and the Get Directions button will use it instead.','optional')}
           </div>`)}
         ${H.card('Google rating','The score shown on your homepage and reviews page',`
           ${H.field('Rating out of 5',H.input('googleRating',c.googleRating,BUSINESS.contact.googleRating),
@@ -5970,8 +5976,10 @@ const Modules = {
       body:`<div class="preview">
         <div class="preview-bar"><i></i><i></i><i></i><span>${U.esc(DOMAIN)}</span></div>
         <div class="hero-prev" style="padding:52px 26px">
-          ${h.heroImage?`<div class="bgimg" style="background-image:url('${h.heroImage}')"></div>`:''}
-          ${h.heroBadge?`<span class="chip acc" style="position:relative;margin-bottom:14px">${U.esc(h.heroBadge)}</span>`:''}
+          <div class="row" style="justify-content:center;margin-bottom:14px">
+            ${h.heroBadge1?`<span class="chip acc" style="position:relative">${U.esc(h.heroBadge1)}</span>`:''}
+            ${h.heroBadge2?`<span class="chip acc" style="position:relative">${U.esc(h.heroBadge2)}</span>`:''}
+          </div>
           <h4 style="font-size:30px">${U.esc(h.heroTitle)}</h4>
           <p style="max-width:520px;margin:12px auto 0">${U.esc(h.heroSubtitle)}</p>
           <div class="row"><span class="btn btn-pri">${U.esc(h.btn1Text)}</span><span class="btn">${U.esc(h.btn2Text)}</span></div>
