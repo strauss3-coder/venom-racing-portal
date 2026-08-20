@@ -1528,7 +1528,7 @@ const MAP = {
 };
 
 /* Settings documents stored one row each in site_settings. */
-const SETTINGS_KEYS = ['homepage','contact','appearance','gallery','meta'];
+const SETTINGS_KEYS = ['homepage','contact','appearance','gallery','pages','meta'];
 
 /* Your project, pre-filled on the Database page so there is nothing to type.
    Both values are safe to keep in this file. The publishable key is designed
@@ -2203,6 +2203,28 @@ const SEED = () => ({
     ctaBtnText:BUSINESS.copy.ctaBtnText, ctaBtnLink:BUSINESS.copy.ctaBtnLink,
   },
 
+  /* Copy for the pages that are not the homepage, keyed by file name so the
+     website can look up its own. Taken verbatim from each page as it
+     stands, so nothing here starts blank. */
+  pages:{
+    about:{
+      eyebrow:'About Venom Racing',
+      title:'Precision Tuning\nWith Validated Results',
+      text:'Venom Racing is a performance workshop based in eMalahleni, Mpumalanga, built around official dealer accreditation, in-house fabrication and tune validation with data logging.',
+      text2:'Venom Racing is equipped with the latest state-of-the-art diagnostic, data logging and ECU tuning equipment, allowing every vehicle to be tuned safely, accurately and reliably. Our investment in modern technology ensures every calibration is validated for maximum performance, drivability and long-term reliability.',
+      badgeTitle:'RMI Accredited', badgeText:'RMI Accredited workshop',
+      techLabel:'Technology We Use',
+      btnText:'Explore Our Services', btnLink:'performance.html',
+      showcase:[
+        { id:'sc_ecu', url:'assets/images/about/ecu-remapping.jpg', label:'ECU Remapping', alt:'ECU remapping in WinOLS by Venom Racing' },
+        { id:'sc_res', url:'assets/images/about/results.jpg', label:'Validated Results', alt:'Dyno-validated results and data logging by Venom Racing' }
+      ],
+      sections:{
+        specialise:{ eyebrow:'', title:'What We Specialise In', intro:'' }
+      }
+    }
+  },
+
   gallery:[
     { id:'g_gp-exhaust-1', url:'assets/images/gallery/gp-exhaust-1.jpg', type:'image', category:'Exhaust Systems', label:'Custom Exhaust', alt:'Custom Exhaust — Venom Racing' },
     { id:'g_gp-dyno-1', url:'assets/videos/gallery/gp-dyno-1.mp4', type:'video', category:'Dyno Testing', label:'Dyno Run', alt:'Dyno Run' },
@@ -2672,6 +2694,55 @@ const UI = {
   /* image uploader ------------------------------------------------
      Renders a drop zone plus reorderable thumbnails. Calls onChange
      with the new array of data URLs. Works on desktop and mobile. */
+  /* The rotating photo strip that sits beside the lead text on the homepage
+     and the about page. Identical on both, so it is described once here.
+     Listeners are bound to the freshly painted nodes rather than delegated
+     to the host, which survives every repaint and would collect duplicates. */
+  slides(host,opts){
+    const cfg = Object.assign({ list:[], bucket:'', min:1, onChange(){} }, opts);
+    function paint(){
+      const l = cfg.list;
+      host.innerHTML = `
+        <div class="grid" style="gap:14px">
+          ${l.map((sl,i)=>`
+            <div class="card" style="box-shadow:none;background:var(--glass)">
+              <div class="card-b tight">
+                <div id="sl${i}" style="margin-bottom:10px"></div>
+                <div class="field">
+                  <label for="slc${i}">Caption</label>
+                  <input class="inp" id="slc${i}" data-slcap="${i}" value="${U.esc(sl.label||'')}" placeholder="Shown over the photo">
+                </div>
+                <div class="row" style="margin-top:8px">
+                  <button class="btn btn-sm btn-dan" data-sldel="${i}" ${l.length<=cfg.min?'disabled':''}
+                    title="${l.length<=cfg.min?'A carousel needs at least one photo':'Take this slide out of the carousel'}">${ICON.trash} Remove slide</button>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" data-sladd>${ICON.plus} Add a photo</button>
+        </div>`;
+
+      l.forEach((sl,i)=>{
+        const box = U.el('#sl'+i,host);
+        if(box) UI.imagePicker(box,{ value:sl.url, label:'Upload photo', h:130, max:1600, bucket:cfg.bucket,
+          onChange:v=>{ sl.url=v; if(!sl.alt) sl.alt = sl.label||''; cfg.onChange(); } });
+      });
+      U.els('[data-slcap]',host).forEach(el=>el.addEventListener('input',U.debounce(()=>{
+        l[Number(el.dataset.slcap)].label = el.value; cfg.onChange();
+      },450)));
+      U.el('[data-sladd]',host).addEventListener('click',()=>{
+        l.push({ id:U.id('sc'), url:'', label:'', alt:'' }); cfg.onChange(); paint();
+      });
+      U.els('[data-sldel]',host).forEach(b=>b.addEventListener('click',async()=>{
+        if(await UI.confirm({title:'Remove this photo?',
+            message:'It is taken out of the carousel on this page.',confirmText:'Remove'})){
+          l.splice(Number(b.dataset.sldel),1); cfg.onChange(); paint();
+        }
+      }));
+    }
+    paint();
+  },
   uploader(host,opts){
     /* thumbs:false leaves the drop zone on its own, for callers that show
        the same media in a grid of their own - two lists of the same
@@ -3416,7 +3487,6 @@ Portal.register({
     }
 
     if(this.tab==='about'){
-      const slides = Array.isArray(h.showcase) ? h.showcase : [];
       host.innerHTML = `
         <div class="grid g2" style="align-items:start">
           <div class="grid" style="gap:14px">
@@ -3440,45 +3510,14 @@ Portal.register({
           </div>
           <div class="grid" style="gap:14px">
             ${H.card('About carousel','The rotating photos beside your about text',`
-              <div class="grid" style="gap:14px" id="scList">
-                ${slides.map((s,i)=>`
-                  <div class="card" style="box-shadow:none;background:var(--glass)">
-                    <div class="card-b tight">
-                      <div id="scImg${i}" style="margin-bottom:10px"></div>
-                      ${H.field('Caption',H.input('showcase.'+i+'.label',s.label,'Shown over the photo'))}
-                      <div class="row" style="margin-top:8px">
-                        <button class="btn btn-sm btn-dan" data-scdel="${i}" ${slides.length<2?'disabled':''}
-                          title="${slides.length<2?'A carousel needs at least one photo':'Take this slide out of the carousel'}">${ICON.trash} Remove slide</button>
-                      </div>
-                    </div>
-                  </div>`).join('')}
-              </div>
-              <div class="row" style="margin-top:12px">
-                <button class="btn" data-act="scadd">${ICON.plus} Add a photo</button>
-              </div>
+              <div id="scList"></div>
               <div class="note" style="margin-top:12px">${ICON.info}<div>The carousel rotates on its own. Two or more photos work best.</div></div>`)}
           </div>
         </div>`;
       bindAll();
-      slides.forEach((s,i)=>{
-        const box = U.el('#scImg'+i,host);
-        if(box) UI.imagePicker(box,{ value:s.url, label:'Upload photo', h:130, max:1600,
-          bucket:BUSINESS.buckets.gallery,
-          onChange:v=>{ s.url=v; if(!s.alt) s.alt=s.label||''; save(); } });
-      });
-      U.on(host,'click','[data-act="scadd"]',()=>{
-        h.showcase = slides.concat([{ id:U.id('sc'), url:'', label:'', alt:'' }]);
-        save(); Router.refresh();
-      });
-      U.on(host,'click','[data-scdel]',async(e,b)=>{
-        const i = Number(b.dataset.scdel);
-        if(await UI.confirm({title:'Remove this photo?',
-            message:'It is taken out of the carousel on your homepage.',confirmText:'Remove'})){
-          h.showcase = slides.filter((_,n)=>n!==i);
-          save(); Store.log('About carousel updated',h.showcase.length+' photos','image');
-          Router.refresh();
-        }
-      });
+      if(!Array.isArray(h.showcase)) h.showcase = [];
+      UI.slides(U.el('#scList',host),{ list:h.showcase, bucket:BUSINESS.buckets.gallery,
+        onChange:()=>{ save(); Store.log('About carousel updated',h.showcase.length+' photos','image'); } });
     }
 
     if(this.tab==='sections'){
@@ -3539,6 +3578,69 @@ Portal.register({
         <span class="btn btn-pri btn-sm">${U.esc(h.btn1Text||'Button')}</span>
         <span class="btn btn-sm">${U.esc(h.btn2Text||'Button')}</span>
       </div>`;
+  }
+});
+
+/* ==================================================================
+   MODULE: About page
+   ================================================================== */
+Portal.register({
+  id:'aboutpage', title:'About Page', sub:'Your story, carousel and specialities', icon:'info', group:'Website', instant:true,
+  render(){
+    const a = Store.data.pages.about;
+    const secs = a.sections || {};
+    return `
+    ${H.head('About Page','Everything on about.html. The cards further down that page - Our Mission, the technology chips and the specialities - are edited under Page Sections.',
+      `<a class="btn" href="${U.esc(BUSINESS.website)}/about.html" target="_blank" rel="noopener">${ICON.eye} View page</a>`)}
+    <div class="grid g2" style="align-items:start">
+      <div class="grid" style="gap:14px">
+        ${H.card('Lead text','The words at the top of the page',`
+          <div class="grid" style="gap:14px">
+            ${H.field('Small label above the title',H.input('eyebrow',a.eyebrow,'About Venom Racing'))}
+            ${H.field('Page title',H.ta('title',a.title,'Precision Tuning',2),'Press Enter for a second line, exactly as the page shows it.')}
+            ${H.field('First paragraph',H.ta('text',a.text,'Who you are',5))}
+            ${H.field('Second paragraph',H.ta('text2',a.text2,'Optional second paragraph',5),'Leave empty and the website keeps the paragraph already on the page.')}
+          </div>`)}
+        ${H.card('Accreditation badge','The panel under the carousel',`
+          <div class="grid" style="gap:14px">
+            ${H.field('Badge title',H.input('badgeTitle',a.badgeTitle,'RMI Accredited'))}
+            ${H.field('Badge text',H.input('badgeText',a.badgeText,'RMI Accredited workshop'))}
+          </div>`)}
+        ${H.card('Technology strip','The row of chips under your story',`
+          ${H.field('Strip label',H.input('techLabel',a.techLabel,'Technology We Use'),'The chips themselves are edited under Page Sections.')}`)}
+      </div>
+      <div class="grid" style="gap:14px">
+        ${H.card('Page carousel','The rotating photos beside your story',`
+          <div id="abSlides"></div>
+          <div class="note" style="margin-top:12px">${ICON.info}<div>The carousel rotates on its own. Two or more photos work best.</div></div>`)}
+        ${H.card('What We Specialise In','The heading above the specialities',`
+          <div class="grid" style="gap:12px">
+            ${H.field('Small label',H.input('sections.specialise.eyebrow',(secs.specialise||{}).eyebrow,'Optional'),'','optional')}
+            ${H.field('Heading',H.ta('sections.specialise.title',(secs.specialise||{}).title,'What We Specialise In',2))}
+            ${H.field('Intro line',H.ta('sections.specialise.intro',(secs.specialise||{}).intro,'Optional line under the heading',2),'','optional')}
+          </div>`)}
+        ${H.card('Closing button','The link at the bottom of the page',`
+          <div class="grid g2">
+            ${H.field('Button text',H.input('btnText',a.btnText,'Explore Our Services'))}
+            ${H.field('Button link',H.input('btnLink',a.btnLink,'performance.html'))}
+          </div>`)}
+      </div>
+    </div>`;
+  },
+  mount(root){
+    const a = Store.data.pages.about;
+    const save = ()=>{ Store.persist(); Store.emit('pages'); };
+    /* Dotted keys write into sections.<key>.<field>. */
+    H.bind(root,(k,v)=>{
+      const parts = k.split('.');
+      let o = a;
+      while(parts.length>1){ const p=parts.shift(); o = (o[p] = o[p]||{}); }
+      o[parts[0]] = v;
+    },()=>{ save(); Store.log('About page updated','About page content was edited','info'); });
+
+    if(!Array.isArray(a.showcase)) a.showcase = [];
+    UI.slides(U.el('#abSlides',root),{ list:a.showcase, bucket:BUSINESS.buckets.gallery,
+      onChange:()=>{ save(); Store.log('About carousel updated',a.showcase.length+' photos','image'); } });
   }
 });
 

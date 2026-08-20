@@ -34,7 +34,7 @@ setTimeout(()=>{
     total+=rows.length;
   });
   // settings documents
-  const settings=['homepage','contact','appearance','gallery','meta'];
+  const settings=['homepage','contact','appearance','gallery','pages','meta'];
   out.push('insert into public.site_settings (key, value) values');
   out.push(settings.map(k=>'  ('+q(k)+', '+q(JSON.stringify(Cloud.settingsValue(k)))+'::jsonb)').join(',\n')+'');
   out.push('on conflict (key) do update set value = excluded.value, updated_at = now();');
