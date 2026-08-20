@@ -1084,6 +1084,7 @@ const BUSINESS = {
     },
     /* Keyed by the data-vr-heading in the website's contact.html. */
     contactSections:{ hero:'Page header', map:'Map card' },
+    faqSections:{ hero:'Page header' },
     /* Keyed by the data-vr-label in contact.html. */
     contactLabels:{
       phone:'Phone card title', phone1:'First number label', phone2:'Second number label',
@@ -2334,6 +2335,13 @@ const SEED = () => ({
           intro:"Tell us about your vehicle and what you're looking to achieve — send us a WhatsApp enquiry and we'll get straight back to you." },
         map:{ eyebrow:'', title:'Visit Our Workshop',
           intro:'Professional Performance Tuning • Dyno Services • Mechanical Repairs' }
+      }
+    },
+    faqs:{
+      buttons:{ contact:{ label:'Closing button', text:'Contact Us', link:'contact.html' } },
+      labels:{ closing:'Still have questions?' },
+      sections:{
+        hero:{ eyebrow:'Questions', title:'Frequently Asked Questions', intro:'' }
       }
     }
   },
@@ -3899,6 +3907,44 @@ Portal.register({
     },()=>{
       Store.persist(); Store.emit('pages');
       Store.log('Contact page updated','Contact page content was edited','mail');
+    });
+  }
+});
+
+/* ==================================================================
+   MODULE: FAQs page
+   ================================================================== */
+Portal.register({
+  id:'faqpage', title:'FAQs Page', sub:'The heading and closing prompt', icon:'help', group:'Website', instant:true,
+  render(){
+    const p = Store.data.pages.faqs;
+    const secs = p.sections || {};
+    const cats = [];
+    Store.list('faqs').forEach(f=>{ if(f.category && cats.indexOf(f.category)<0) cats.push(f.category); });
+    return `
+    ${H.head('FAQs Page','The words around your questions on faqs.html. The questions themselves, and the headings above each group, come from FAQs.',
+      `<a class="btn" href="${U.esc(BUSINESS.website)}/faqs.html" target="_blank" rel="noopener">${ICON.eye} View page</a>`)}
+    <div class="grid g2" style="align-items:start">
+      ${Object.keys(BUSINESS.vocab.faqSections).filter(k=>secs[k]).map(k=>H.sectionCard(k,BUSINESS.vocab.faqSections[k],secs[k])).join('')}
+      ${H.card('Closing prompt','The line above the button at the foot of the page',
+        H.field('Text',H.input('labels.closing',(p.labels||{}).closing,'Still have questions?')))}
+    </div>
+    <div style="height:14px"></div>
+    ${H.card('Question groups','',`
+      <div class="note">${ICON.info}<div>Your questions are grouped by category, and each group gets its own heading on the page. You have <b>${cats.length}</b>: ${cats.map(c=>U.esc(c)).join(', ')||'none yet'}. Add a new category in FAQs and a new group appears on the page.</div></div>`)}
+    <div style="height:14px"></div>
+    ${H.buttonCard(p.buttons)}`;
+  },
+  mount(root){
+    const p = Store.data.pages.faqs;
+    H.bind(root,(k,v)=>{
+      const parts = k.split('.');
+      let o = p;
+      while(parts.length>1){ const key=parts.shift(); o = (o[key] = o[key]||{}); }
+      o[parts[0]] = v;
+    },()=>{
+      Store.persist(); Store.emit('pages');
+      Store.log('FAQs page updated','FAQs page content was edited','help');
     });
   }
 });
