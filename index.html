@@ -1086,6 +1086,7 @@ const BUSINESS = {
     contactSections:{ hero:'Page header', map:'Map card' },
     faqSections:{ hero:'Page header' },
     reviewSections:{ hero:'Page header' },
+    gallerySections:{ hero:'Page header' },
     /* Keyed by the data-vr-label in contact.html. */
     contactLabels:{
       phone:'Phone card title', phone1:'First number label', phone2:'Second number label',
@@ -1096,8 +1097,9 @@ const BUSINESS = {
     validation:['Dyno','V-Box','Dyno + V-Box','Road tested'],
     productTypes:['Octane booster','Injector cleaner','Fuel enhancer','Service treatment','Transmission treatment','Protection additive'],
     galleryCats:['Performance Builds','ECU Calibration','Dyno Testing','Exhaust Systems','Turbo Upgrades','Workshop','Services & Repairs','Videos'],
-    /* Exactly the options in the website's contact.html service dropdown,
-       so an enquiry arrives with a value the portal already knows. */
+    /* Fallback only. The website's contact form is built from your Services
+       now, and so is the dropdown on a hand-added enquiry, so the two always
+       offer the same list. These are used only before any service exists. */
     serviceOptions:['Performance Upgrade','ECU Calibration','Dyno Tuning','Turbo Upgrade','Exhaust System','Vehicle Service','Mechanical Repairs','General Enquiry'],
     /* The website's own pages, by filename without the extension. */
     pages:['index','performance','services','about','gallery','reviews','faqs','contact','privacy','terms'],
@@ -2358,6 +2360,13 @@ const SEED = () => ({
       sections:{
         hero:{ eyebrow:'Customer Testimonials', title:'Trusted by Performance Enthusiasts Across South Africa',
           intro:'Read genuine feedback from customers who have trusted Venom Racing with performance tuning, diagnostics, servicing and custom fabrication.' }
+      }
+    },
+    gallery:{
+      labels:{ empty:'Nothing in this filter yet.' },
+      sections:{
+        hero:{ eyebrow:'Workshop & Builds', title:'Gallery',
+          intro:'The complete showcase of Venom Racing — performance builds, dyno runs, custom exhaust fabrication, tuning and workshop life. Tap any item to view it full-screen.' }
       }
     }
   },
@@ -4002,6 +4011,43 @@ Portal.register({
     },()=>{
       Store.persist(); Store.emit('pages');
       Store.log('Reviews page updated','Reviews page content was edited','star');
+    });
+  }
+});
+
+/* ==================================================================
+   MODULE: Gallery page
+   ================================================================== */
+Portal.register({
+  id:'gallerypage', title:'Gallery Page', sub:'The heading above your photos', icon:'image', group:'Website', instant:true,
+  render(){
+    const p = Store.data.pages.gallery;
+    const secs = p.sections || {};
+    const all = Store.list('gallery');
+    const cats = BUSINESS.vocab.galleryCats.filter(c=>all.some(g=>g.category===c));
+    const hasVideo = all.some(g=>g.type==='video');
+    return `
+    ${H.head('Gallery Page','The words above your photos on gallery.html. The photos and videos themselves are managed in Gallery Manager.',
+      `<a class="btn" href="${U.esc(BUSINESS.website)}/gallery.html" target="_blank" rel="noopener">${ICON.eye} View page</a>`)}
+    <div class="grid g2" style="align-items:start">
+      ${Object.keys(BUSINESS.vocab.gallerySections).filter(k=>secs[k]).map(k=>H.sectionCard(k,BUSINESS.vocab.gallerySections[k],secs[k])).join('')}
+      ${H.card('Filters','The buttons visitors use to narrow the gallery',`
+        <div class="grid" style="gap:14px">
+          <div class="note">${ICON.info}<div>A filter only appears once something is filed under it, so no visitor lands on an empty page. Showing now: <b>All</b>${cats.map(c=>', '+U.esc(c)).join('')}${hasVideo?', <b>Videos</b>':''}.</div></div>
+          ${H.field('When a filter has nothing in it',H.input('labels.empty',(p.labels||{}).empty,'Nothing in this filter yet.'))}
+        </div>`)}
+    </div>`;
+  },
+  mount(root){
+    const p = Store.data.pages.gallery;
+    H.bind(root,(k,v)=>{
+      const parts = k.split('.');
+      let o = p;
+      while(parts.length>1){ const key=parts.shift(); o = (o[key] = o[key]||{}); }
+      o[parts[0]] = v;
+    },()=>{
+      Store.persist(); Store.emit('pages');
+      Store.log('Gallery page updated','Gallery page content was edited','image');
     });
   }
 });
@@ -6054,7 +6100,10 @@ const Modules = {
         </div>
         <div class="grid g2">
           ${H.field('Registration',H.input('registration',draft.registration,'Optional'),'','optional')}
-          ${H.field('Service required',H.sel('service',draft.service,[{v:'',l:'Choose a service'}].concat(BUSINESS.vocab.serviceOptions)))}
+          ${H.field('Service required',H.sel('service',draft.service,[{v:'',l:'Choose a service'}].concat(
+            Store.list('services').filter(x=>x.active!==false).map(x=>x.title)
+            .concat(BUSINESS.vocab.serviceOptions.filter(o=>!Store.list('services').some(x=>x.title===o)))
+          )),'The same list your website offers.')}
         </div>
         <div class="grid g2">
           ${H.field('How they contacted you',H.sel('source',draft.source,['Phone call','WhatsApp','Website form','Walk in','Facebook','Instagram','TikTok','Referral']))}
