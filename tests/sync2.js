@@ -17,8 +17,11 @@ const DATA={
     {id:'f1',question:'PORTAL question one?',answer:'Portal answer one.',category:'General',featured:true},
     {id:'f2',question:'PORTAL question two?',answer:'Portal answer two.',category:'Booking',featured:false}],
   'testimonials':[{id:'t1',name:'PORTAL Reviewer',review:'Portal review text.',date_text:'today',sort_order:0}],
-  'website_stages':[{id:'s1',name:'Stage 9',tagline:'PORTAL Stage Tagline',description:'Portal stage copy.',
-     requirements:['Portal req one','Portal req two'],benefits:[],note:'Portal note.',sort_order:0}]
+  'website_stages':[
+    {id:'s1',label:'9',name:'Stage 9',tagline:'PORTAL Stage Tagline',description:'Portal stage copy.',
+     requirements:['Portal req one','Portal req two'],benefits:['Portal benefit'],note:'Portal note.',sort_order:0},
+    {id:'s2',label:'X',name:'Stage X',tagline:'PORTAL Extra Tagline',description:'A stage the page never shipped with.',
+     requirements:[],benefits:[],note:'',sort_order:1}]
 };
 function run(page,mode){
   return new Promise(res=>{
@@ -27,6 +30,12 @@ function run(page,mode){
       url:'https://venomracing.co.za/'+page, beforeParse(w){
       w.matchMedia=()=>({matches:false,addListener(){},removeListener(){},addEventListener(){},removeEventListener(){}});
       w.scrollTo=()=>{}; w.open=()=>null;
+      /* jsdom has no element scrolling; the carousel and the stage tabs
+         both call it, as the other suites already account for. */
+      w.Element.prototype.scrollTo=function(){};
+      w.Element.prototype.scrollIntoView=function(){};
+      w.HTMLMediaElement.prototype.play=function(){return Promise.resolve();};
+      w.HTMLMediaElement.prototype.load=function(){};
       w.IntersectionObserver=class{constructor(cb){this.cb=cb}observe(el){this.cb([{isIntersecting:true,target:el}],this)}unobserve(){}disconnect(){}};
       w.fetch=(u)=>{
         if(mode==='down')  return Promise.reject(new Error('down'));
@@ -113,6 +122,55 @@ function run(page,mode){
     t('['+mode+'] reviews intact',()=>{const g=r.querySelector('[data-reviews-grid]');
        if(!/William Nalane/.test(g.textContent)) throw new Error('reviews lost');});
   }
+  /* The homepage timeline used to be the one thing the portal could not
+     touch: a stage added there appeared on the performance page and nowhere
+     else. Three controls address stages by index - the desktop tabs, their
+     panels and the mobile dropdown - so they are checked together. */
+  console.log('\n=== HOMEPAGE STAGE TIMELINE FOLLOWS THE PORTAL ===');
+  {
+    const hd = (await run('index.html','ok')).document;
+    const tabs = hd.querySelectorAll('[data-stage-tab]').length;
+    const panels = hd.querySelectorAll('[data-stage-content]').length;
+    const opts = hd.querySelectorAll('[data-ss-option]').length;
+    t('all three controls match the portal',()=>{
+      if(tabs!==2||panels!==2||opts!==2)
+        throw new Error('tabs '+tabs+', panels '+panels+', mobile '+opts+' for 2 stages');});
+    t('a stage the page never had still appears',()=>{
+      const names=[...hd.querySelectorAll('.stage-tab__name')].map(x=>x.textContent.trim());
+      if(names.indexOf('Stage X')<0) throw new Error(names.join('|'));});
+    t('its panel carries its own copy',()=>{
+      const p=hd.querySelector('[data-stage-content="1"]');
+      if(!/PORTAL Extra Tagline/.test(p.querySelector('.stage-content__title').textContent)) throw new Error('tagline');
+      if(!/never shipped with/.test(p.querySelector('.stage-content__desc').textContent)) throw new Error('description');});
+    /* Panels are cloned from whichever stage sat at that position, so an
+       empty one used to inherit the template's lists, headings and note. */
+    t('an empty stage inherits nothing from its template',()=>{
+      const p=hd.querySelector('[data-stage-content="1"]');
+      const heads=[...p.querySelectorAll('.stage-content__label')].map(x=>x.textContent.trim());
+      if(heads.length) throw new Error('orphan headings: '+heads.join('|'));
+      if(p.querySelector('.stage-list')) throw new Error('inherited a requirements list');
+      if(p.querySelector('.stage-benefits')) throw new Error('inherited a benefits row');
+      if(p.querySelector('.stage-content__note')) throw new Error('inherited a footnote');});
+    t('a stage with a note keeps its own',()=>{
+      const p=hd.querySelector('[data-stage-content="0"]');
+      const n=p.querySelector('.stage-content__note');
+      if(!n||!/Portal note/.test(n.textContent)) throw new Error(n?n.textContent:'note dropped');});
+    t('the mobile list names them too',()=>{
+      const l=[...hd.querySelectorAll('.stage-select__opt-label')].map(x=>x.textContent.trim());
+      if(!l.some(x=>/Stage X/.test(x))) throw new Error(l.join('|'));});
+    t('no stale panel is left behind',()=>{
+      const badges=[...hd.querySelectorAll('.stage-content__badge')].map(x=>x.textContent.trim());
+      if(badges.some(b=>/Stage 1\b|Stage 2\b|Stage 3\b/.test(b))) throw new Error('shipped stages still present: '+badges.join('|'));});
+  }
+  {
+    const hd = (await run('index.html','down')).document;
+    t('[down] the page keeps its own five stages',()=>{
+      const tabs=hd.querySelectorAll('[data-stage-tab]').length;
+      const panels=hd.querySelectorAll('[data-stage-content]').length;
+      const opts=hd.querySelectorAll('[data-ss-option]').length;
+      if(tabs!==5||panels!==5||opts!==5) throw new Error(tabs+'/'+panels+'/'+opts);});
+  }
+
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 })();
