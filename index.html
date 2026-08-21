@@ -1662,14 +1662,28 @@ const Cloud = {
     }catch(err){
       throw new Error('No connection to the database. Check your internet.');
     }
-    if(res.status===401 && this.session && !opts._retried){
-      const ok = await this.refresh();
-      if(ok) return this.raw(path,Object.assign({},opts,{_retried:true}));
-    }
     if(!res.ok){
+      /* Read once: the body decides whether this is a stale token and also
+         carries the message shown if it is not. */
+      const body = await res.text().catch(()=>'');
+
+      /* An expired session does not look the same everywhere. REST answers
+         401, which used to be the only case handled here, so it refreshed
+         and carried on. Storage answers 400 with the reason in the body, so
+         it never refreshed - and every upload failed until the page was
+         reloaded, with only a puzzling message to go on. */
+      const stale = res.status===401 || res.status===403 ||
+        (res.status===400 && /jwt|claim|token|signature|expired/i.test(body));
+      if(stale && this.session && !opts._retried){
+        const ok = await this.refresh();
+        if(ok) return this.raw(path,Object.assign({},opts,{_retried:true}));
+      }
+
       let msg = '';
-      try{ const j = await res.json(); msg = j.message || j.error_description || j.error || j.hint || ''; }
-      catch(e){ msg = await res.text().catch(()=>''); }
+      /* GoTrue returns its reason in `msg`, not `message`, so an unconfirmed
+         address used to surface as a bare status code. */
+      try{ const j = JSON.parse(body); msg = j.message || j.msg || j.error_description || j.error || j.hint || ''; }
+      catch(e){ msg = body; }
       throw new Error((msg||('Request failed with status '+res.status)).slice(0,220));
     }
     if(res.status===204) return null;
@@ -4414,33 +4428,6 @@ Portal.register({
 });
 
 /* ==================================================================
-   MODULE: Media Library
-   Everything uploaded to Storage, in one place.
-   ================================================================== */
-Portal.register({
-  id:'media', title:'Media Library', sub:'Every image you have uploaded', icon:'image', group:'Website', instant:true,
-  render(){
-    return `
-    ${H.head('Media Library','Every image uploaded from this portal, across your gallery, products, brands and branding.',
-      `<button class="btn" data-act="reload">${ICON.refresh} Reload</button>`)}
-    <div id="mediaBody">
-      <div class="row" style="gap:10px;align-items:center;color:var(--text-3);font-size:13px">
-        ${ICON.refresh} Loading your media...
-      </div>
-    </div>`;
-  },
-  mount(root){
-    Modules.paintMedia();
-    U.on(root,'click','[data-act="reload"]',()=>Modules.paintMedia());
-    U.on(root,'click','[data-mprev]',(e,b)=>UI.lightbox(b.dataset.mprev));
-    U.on(root,'click','[data-mcopy]',(e,b)=>{
-      U.copy(b.dataset.mcopy);
-      UI.toast('ok','Link copied','Paste it wherever you need the image');
-    });
-  }
-});
-
-/* ==================================================================
    MODULE: Contact details
    ================================================================== */
 Portal.register({
@@ -4894,7 +4881,7 @@ DB.size()    // storage used in bytes
    MODULE: Database  -  connect the portal to Supabase
    ================================================================== */
 Portal.register({
-  id:'database', title:'Database', sub:'Connect the portal to your live data', icon:'db', group:'System', instant:true,
+  id:'database', title:'Database', sub:'Connect the portal to your live data', icon:'db', group:'System', instant:true, hidden:true,
   badge(){ return Cloud.on ? (Cloud.queue.length?{text:String(Cloud.queue.length)}:null) : {text:'Set up',mut:true}; },
   render(){
     const on = Cloud.on, authed = Cloud.authed;
@@ -5748,51 +5735,6 @@ const Modules = {
     });
   },
 
-  /* Reads the buckets directly rather than tracking uploads separately,
-     so the library always reflects what is really in Storage. */
-  async paintMedia(){
-    const host = U.el('#mediaBody');
-    if(!host) return;
-    if(!Cloud.authed){
-      host.innerHTML = `<div class="note warn">${ICON.warn}<div>Sign in to see your uploaded media.</div></div>`;
-      return;
-    }
-    const buckets = [BUSINESS.buckets.gallery,BUSINESS.buckets.branding];
-    let groups;
-    try{
-      groups = await Promise.all(buckets.map(async b=>({ bucket:b, rows:await Cloud.listBucket(b) })));
-    }catch(e){
-      host.innerHTML = `<div class="note dan">${ICON.warn}<div><b>Could not reach Storage.</b> ${U.esc(e.message)}</div></div>`;
-      return;
-    }
-    const total = groups.reduce((n,g)=>n+g.rows.length,0);
-    if(!total){
-      host.innerHTML = H.empty('image','No media uploaded yet',
-        'Images you add in Gallery, Products, Brands or SEO appear here.');
-      return;
-    }
-    host.innerHTML = groups.filter(g=>g.rows.length).map(g=>
-      H.card(g.bucket, g.rows.length+' file'+(g.rows.length===1?'':'s'),
-        `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
-          ${g.rows.map(r=>{
-            const url = Cloud.publicUrl(g.bucket,r.name);
-            const kb = r.metadata && r.metadata.size ? Math.round(r.metadata.size/1024)+' KB' : '';
-            return `<div class="card" style="box-shadow:none;background:var(--glass)">
-              <img src="${U.esc(url)}" alt="${U.esc(r.name)}" loading="lazy"
-                   style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--r-xs) var(--r-xs) 0 0">
-              <div class="card-b tight">
-                <div style="font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${U.esc(r.name)}">${U.esc(r.name)}</div>
-                <div style="font-size:11px;color:var(--text-3)">${U.esc(kb)}</div>
-                <div class="row" style="margin-top:8px;gap:6px">
-                  <button class="btn btn-sm" data-mprev="${U.esc(url)}" aria-label="Preview ${U.esc(r.name)}" title="Preview">${ICON.eye}</button>
-                  <button class="btn btn-sm" data-mcopy="${U.esc(url)}" aria-label="Copy link to ${U.esc(r.name)}" title="Copy link">${ICON.copy}</button>
-                </div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>`)
-    ).join('<div style="height:14px"></div>');
-  },
 
   /* ---------- services, stages, products, brands, faqs ------------ */
   serviceForm(id,division){
@@ -6404,7 +6346,10 @@ const Router = {
 
   buildNav(){
     const groups = [];
-    Portal.modules.forEach(m=>{
+    /* hidden:true keeps a module reachable at its own address but out of the
+       sidebar - for screens that belong to whoever set the portal up rather
+       than to the person running the business. */
+    Portal.modules.filter(m=>!m.hidden).forEach(m=>{
       const g = m.group||'General';
       let grp = groups.find(x=>x.name===g);
       if(!grp){ grp={name:g,items:[]}; groups.push(grp); }

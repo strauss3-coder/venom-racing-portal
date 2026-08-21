@@ -126,6 +126,61 @@ const table=(u)=>String(u).split('/rest/v1/')[1].split('?')[0];
   t('deliberate removal respected',()=>{ const n=Store.list('gallery').length;
     if(n!==0) throw new Error(n+' items came back'); });
 
+  /* An expired session does not look the same on every service. REST says
+     401; Storage says 400 with the reason in the body. Only 401 used to
+     trigger a refresh, so uploads failed until the page was reloaded. */
+  console.log('\n=== A STALE TOKEN IS REFRESHED WHEREVER IT SHOWS UP ===');
+  const staleRun = (status, body) => boot((u,o)=>{
+    const url=String(u);
+    if(url.includes('/auth/v1/token')) return ok({access_token:'fresh',refresh_token:'r2'});
+    if(url.includes('/storage/v1/')){
+      if(!r0.refreshed) { r0.refreshed=true;
+        return Promise.resolve({ok:false,status,json:()=>Promise.resolve(JSON.parse(body)),
+          text:()=>Promise.resolve(body)}); }
+      return ok([{name:'photo.jpg'}]);
+    }
+    if(url.includes('rpc/is_owner')) return ok(true);
+    return ok([]);
+  });
+  let r0={refreshed:false};
+  let sr=await staleRun(400,'{"message":"\\"exp\\" claim timestamp check failed"}');
+  let C=sr.w.VenomPortal.Cloud;
+  C.setSession({access_token:'stale',refresh_token:'r1',email:'o@x.com',at:Date.now()});
+  let sout=null, err=null;
+  try{ sout=await C.listBucket('gallery'); }catch(e){ err=e.message; }
+  t('Storage 400 refreshes and retries',()=>{
+    if(err) throw new Error('threw instead of refreshing: '+err);
+    if(!Array.isArray(sout)||!sout.length) throw new Error('no rows after retry');});
+  t('the refresh actually happened',()=>{
+    const hit=sr.calls.some(c=>/auth\/v1\/token/.test(c.url));
+    if(!hit) throw new Error('never called the token endpoint');});
+
+  r0={refreshed:false};
+  sr=await staleRun(401,'{"message":"JWT expired"}');
+  C=sr.w.VenomPortal.Cloud;
+  C.setSession({access_token:'stale',refresh_token:'r1',email:'o@x.com',at:Date.now()});
+  err=null; sout=null;
+  try{ sout=await C.listBucket('gallery'); }catch(e){ err=e.message; }
+  t('401 still refreshes as it always did',()=>{
+    if(err) throw new Error('threw: '+err);
+    if(!Array.isArray(sout)||!sout.length) throw new Error('no rows after retry');});
+
+  /* A 400 that is not about the token must surface, not loop. */
+  r0={refreshed:true};
+  sr=await boot((u,o)=>{
+    const url=String(u);
+    if(url.includes('/storage/v1/')) return Promise.resolve({ok:false,status:400,
+      json:()=>Promise.resolve({message:'Bucket not found'}),text:()=>Promise.resolve('{"message":"Bucket not found"}')});
+    if(url.includes('rpc/is_owner')) return ok(true);
+    return ok([]);
+  });
+  C=sr.w.VenomPortal.Cloud;
+  C.setSession({access_token:'good',refresh_token:'r1',email:'o@x.com',at:Date.now()});
+  err=null;
+  try{ await C.listBucket('nope'); }catch(e){ err=e.message; }
+  t('an unrelated 400 still reports its reason',()=>{
+    if(!err||!/Bucket not found/.test(err)) throw new Error('got: '+err);});
+
   console.log('\nRESULT: '+(bad?'FAIL='+bad:'PASS'));
   process.exit(bad?1:0);
 })();

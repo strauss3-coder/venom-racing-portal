@@ -9,8 +9,12 @@ const dom=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,
   w.matchMedia=()=>({matches:false,addListener(){},removeListener(){},addEventListener(){},removeEventListener(){}});
   w.scrollTo=()=>{}; w.HTMLCanvasElement.prototype.getContext=()=>({drawImage(){},fillRect(){}});
   w.fetch=(u,o)=>{ fetchCalls.push(String(u));
-    if(String(u).includes('/auth/v1/health')) return Promise.resolve({ok:true,status:200,json:()=>Promise.resolve({})});
-    return Promise.resolve({ok:false,status:400,json:()=>Promise.resolve({error_description:'Invalid login credentials'})});
+    /* A real Response always carries both readers, and the client reads the
+       body as text before deciding what to do with it. */
+    if(String(u).includes('/auth/v1/health'))
+      return Promise.resolve({ok:true,status:200,json:()=>Promise.resolve({}),text:()=>Promise.resolve('{}')});
+    const body='{"error_description":"Invalid login credentials"}';
+    return Promise.resolve({ok:false,status:400,json:()=>Promise.resolve(JSON.parse(body)),text:()=>Promise.resolve(body)});
   };
 }});
 const w=dom.window, D=w.document;
